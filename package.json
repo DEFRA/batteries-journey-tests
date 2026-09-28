@@ -1,6 +1,6 @@
 {
-  "name": "cdp-node-env-test-suite-template",
-  "version": "0.1.0",
+  "name": "batteries-journey-tests",
+  "version": "0.0.0",
   "description": "",
   "type": "module",
   "engines": {
