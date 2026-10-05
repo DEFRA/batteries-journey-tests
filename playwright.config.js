@@ -13,8 +13,6 @@ export default defineConfig({
   testDir: './tests/specs',
   // Keeps the existing *.e2e.js spec naming convention.
   testMatch: '**/*.e2e.js',
-  // WDIO spec, kept running under WDIO until it is removed in migration step 8.
-  testIgnore: ['**/specs/home.e2e.js'],
 
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

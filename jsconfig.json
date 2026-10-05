@@ -4,6 +4,9 @@
     "baseUrl": "./",
     "paths": {
       "#pages/*": ["./tests/pages/*"],
+      "#flows/*": ["./tests/flows/*"],
+      "#fixtures/*": ["./tests/fixtures/*"],
+      "#utils/*": ["./tests/utils/*"],
       "#components/*": ["./tests/components/*"]
     }
   },
