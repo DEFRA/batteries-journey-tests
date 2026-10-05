@@ -34,3 +34,9 @@ jobs:
     name: Run Journey Tests
     uses: ./.github/workflows/journey-tests.yml
     secrets: inherit
+    # A called workflow cannot hold more permissions than its caller grants.
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      id-token: write
