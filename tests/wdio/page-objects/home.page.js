@@ -1,4 +1,4 @@
-import { Page } from '#pages/page'
+import { Page } from './page.js'
 
 class HomePage extends Page {
   open() {

@@ -20,7 +20,7 @@ export const config = {
   key: process.env.BROWSERSTACK_KEY,
 
   // Tests to run
-  specs: ['./tests/specs/**/*.js'],
+  specs: ['./tests/wdio/**/*.e2e.js'],
   // Tests to exclude
   exclude: [],
   maxInstances: 1,
