@@ -1,7 +1,7 @@
 # WDIO → Playwright Migration Plan
 
 Anchor for agent sessions working on the migration on branch
-`feature/convert-wdio-to-playwright`. Update the status column as steps land.
+`feature/EB-201-convert-wdio-to-playwright`. Update the status column as steps land.
 
 ## Working agreement
 
@@ -70,7 +70,7 @@ Anchor for agent sessions working on the migration on branch
 
 ### Open items
 
-1. **Prove CI on GitHub** (item 5): push `feature/convert-wdio-to-playwright`, open a draft PR (no `Depends-On:` → all services `latest`), add `Depends-On: waste-batteries-reg-frontend#main` to the description (→ built from branch), and run the workflow by hand with a service branch and `firefox`. Check the "Resolve service branches" log each time.
+1. **Prove CI on GitHub** (item 5): push `feature/EB-201-convert-wdio-to-playwright`, open a draft PR (no `Depends-On:` → all services `latest`), add `Depends-On: waste-batteries-reg-frontend#main` to the description (→ built from branch), and run the workflow by hand with a service branch and `firefox`. Check the "Resolve service branches" log each time.
 2. **First real run of the DockerHub images** happens on that CI run (amd64); they could not be run on the Apple-silicon dev machine without Rosetta.
 3. **`DEFRA/cdp-build-action/docker-login`** may need organisation secrets; the PR check passes `secrets: inherit`.
 4. **Sign-in** is not wired for the browser yet (Defra ID stub reachable only as `cdp-defra-id-stub:3200`); needed before any signed-in journey.
