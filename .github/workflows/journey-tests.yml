@@ -1,15 +1,231 @@
 name: Run Journey Tests on GitHub
 
+# Filename is fixed: downstream service repos call this workflow by name.
+#
+# Which version of each service runs:
+#   - Depends-On: <repo>#<branch> lines in the PR body (one per repo), or a
+#     *-branch input → that branch is checked out and built on the runner
+#   - otherwise → the published DockerHub image (*-tag input, default latest,
+#     which is built from main)
+# See .github/scripts/resolve-service-branches.js.
+
 permissions:
+  contents: read
   checks: write
   pull-requests: write
 
 on:
   workflow_dispatch:
+    inputs:
+      journey-tests-branch:
+        description: Branch of batteries-journey-tests (blank = the branch this run was started from)
+        required: false
+        default: ''
+      waste-batteries-reg-frontend-branch:
+        description: Branch of waste-batteries-reg-frontend to build (blank = DockerHub latest)
+        required: false
+        default: ''
+      waste-batteries-submit-frontend-branch:
+        description: Branch of waste-batteries-submit-frontend to build (blank = DockerHub latest)
+        required: false
+        default: ''
+      waste-batteries-obligations-fe-branch:
+        description: Branch of waste-batteries-obligations-fe to build (blank = DockerHub latest)
+        required: false
+        default: ''
+      waste-batteries-reg-backend-branch:
+        description: Branch of waste-batteries-reg-backend to build (blank = DockerHub latest)
+        required: false
+        default: ''
+      waste-batteries-submit-backend-branch:
+        description: Branch of waste-batteries-submit-backend to build (blank = DockerHub latest)
+        required: false
+        default: ''
+      waste-batteries-obligations-be-branch:
+        description: Branch of waste-batteries-obligations-be to build (blank = DockerHub latest)
+        required: false
+        default: ''
+      browser:
+        description: Browser to run tests against
+        required: false
+        default: chromium
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+      profile:
+        description: Test filter by title or @tag (e.g. @smoke). Blank runs everything.
+        required: false
+        default: ''
+
   workflow_call:
+    inputs:
+      journey-tests-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-reg-frontend-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-submit-frontend-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-obligations-fe-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-reg-backend-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-submit-backend-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-obligations-be-branch:
+        type: string
+        required: false
+        default: ''
+      waste-batteries-reg-frontend-tag:
+        type: string
+        required: false
+        default: latest
+      waste-batteries-submit-frontend-tag:
+        type: string
+        required: false
+        default: latest
+      waste-batteries-obligations-fe-tag:
+        type: string
+        required: false
+        default: latest
+      waste-batteries-reg-backend-tag:
+        type: string
+        required: false
+        default: latest
+      waste-batteries-submit-backend-tag:
+        type: string
+        required: false
+        default: latest
+      waste-batteries-obligations-be-tag:
+        type: string
+        required: false
+        default: latest
+      browser:
+        type: string
+        required: false
+        default: chromium
+      profile:
+        type: string
+        required: false
+        default: ''
+
 jobs:
-  build:
+  run-tests:
     name: Run Journey Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: DEFRA/cdp-node-journey-test-suite-template/run-journey-tests@main
+      # Pinned to this repo so the workflow also works when called from a
+      # service repo (a bare checkout would check out the caller). Inside this
+      # repo github.ref is the run's own ref, so PRs test their own changes.
+      - name: Check out batteries-journey-tests
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/batteries-journey-tests
+          ref: ${{ inputs.journey-tests-branch || (github.repository == 'DEFRA/batteries-journey-tests' && github.ref) || 'main' }}
+
+      - name: Resolve service branches
+        id: resolve
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          JOURNEY_TESTS_REF: ${{ inputs.journey-tests-branch || github.ref || 'main' }}
+          WASTE_BATTERIES_REG_FRONTEND_BRANCH: ${{ inputs.waste-batteries-reg-frontend-branch }}
+          WASTE_BATTERIES_SUBMIT_FRONTEND_BRANCH: ${{ inputs.waste-batteries-submit-frontend-branch }}
+          WASTE_BATTERIES_OBLIGATIONS_FE_BRANCH: ${{ inputs.waste-batteries-obligations-fe-branch }}
+          WASTE_BATTERIES_REG_BACKEND_BRANCH: ${{ inputs.waste-batteries-reg-backend-branch }}
+          WASTE_BATTERIES_SUBMIT_BACKEND_BRANCH: ${{ inputs.waste-batteries-submit-backend-branch }}
+          WASTE_BATTERIES_OBLIGATIONS_BE_BRANCH: ${{ inputs.waste-batteries-obligations-be-branch }}
+          WASTE_BATTERIES_REG_FRONTEND_TAG: ${{ inputs.waste-batteries-reg-frontend-tag }}
+          WASTE_BATTERIES_SUBMIT_FRONTEND_TAG: ${{ inputs.waste-batteries-submit-frontend-tag }}
+          WASTE_BATTERIES_OBLIGATIONS_FE_TAG: ${{ inputs.waste-batteries-obligations-fe-tag }}
+          WASTE_BATTERIES_REG_BACKEND_TAG: ${{ inputs.waste-batteries-reg-backend-tag }}
+          WASTE_BATTERIES_SUBMIT_BACKEND_TAG: ${{ inputs.waste-batteries-submit-backend-tag }}
+          WASTE_BATTERIES_OBLIGATIONS_BE_TAG: ${{ inputs.waste-batteries-obligations-be-tag }}
+        run: |
+          echo "batteries-journey-tests: $JOURNEY_TESTS_REF @ $(git rev-parse --short HEAD)"
+          node .github/scripts/resolve-service-branches.js
+
+      - name: Check out waste-batteries-reg-frontend
+        if: fromJSON(steps.resolve.outputs.branches)['waste-batteries-reg-frontend']
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/waste-batteries-reg-frontend
+          ref: ${{ fromJSON(steps.resolve.outputs.branches)['waste-batteries-reg-frontend'] }}
+          path: services/waste-batteries-reg-frontend
+
+      - name: Check out waste-batteries-submit-frontend
+        if: fromJSON(steps.resolve.outputs.branches)['waste-batteries-submit-frontend']
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/waste-batteries-submit-frontend
+          ref: ${{ fromJSON(steps.resolve.outputs.branches)['waste-batteries-submit-frontend'] }}
+          path: services/waste-batteries-submit-frontend
+
+      - name: Check out waste-batteries-obligations-fe
+        if: fromJSON(steps.resolve.outputs.branches)['waste-batteries-obligations-fe']
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/waste-batteries-obligations-fe
+          ref: ${{ fromJSON(steps.resolve.outputs.branches)['waste-batteries-obligations-fe'] }}
+          path: services/waste-batteries-obligations-fe
+
+      - name: Check out waste-batteries-reg-backend
+        if: fromJSON(steps.resolve.outputs.branches)['waste-batteries-reg-backend']
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/waste-batteries-reg-backend
+          ref: ${{ fromJSON(steps.resolve.outputs.branches)['waste-batteries-reg-backend'] }}
+          path: services/waste-batteries-reg-backend
+
+      - name: Check out waste-batteries-submit-backend
+        if: fromJSON(steps.resolve.outputs.branches)['waste-batteries-submit-backend']
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/waste-batteries-submit-backend
+          ref: ${{ fromJSON(steps.resolve.outputs.branches)['waste-batteries-submit-backend'] }}
+          path: services/waste-batteries-submit-backend
+
+      - name: Check out waste-batteries-obligations-be
+        if: fromJSON(steps.resolve.outputs.branches)['waste-batteries-obligations-be']
+        uses: actions/checkout@v4
+        with:
+          repository: DEFRA/waste-batteries-obligations-be
+          ref: ${{ fromJSON(steps.resolve.outputs.branches)['waste-batteries-obligations-be'] }}
+          path: services/waste-batteries-obligations-be
+
+      - name: Build services from branches
+        if: steps.resolve.outputs.branches != '{}'
+        env:
+          BRANCHES: ${{ steps.resolve.outputs.branches }}
+        run: |
+          for service in $(echo "$BRANCHES" | jq -r 'keys[]'); do
+            var=$(echo "$service" | tr 'a-z-' 'A-Z_')
+            echo "Building $service from branch $(echo "$BRANCHES" | jq -r --arg s "$service" '.[$s]') @ $(git -C "services/$service" rev-parse --short HEAD)"
+            export "${var}_PATH=./services/$service"
+            docker compose -f compose.yml -f compose.build.yml build "$service"
+            echo "${var}_TAG=local" >> "$GITHUB_ENV"
+          done
+
+      - name: Run journey tests
+        uses: ./
+        with:
+          waste-batteries-reg-frontend-tag: ${{ env.WASTE_BATTERIES_REG_FRONTEND_TAG || inputs.waste-batteries-reg-frontend-tag || 'latest' }}
+          waste-batteries-submit-frontend-tag: ${{ env.WASTE_BATTERIES_SUBMIT_FRONTEND_TAG || inputs.waste-batteries-submit-frontend-tag || 'latest' }}
+          waste-batteries-obligations-fe-tag: ${{ env.WASTE_BATTERIES_OBLIGATIONS_FE_TAG || inputs.waste-batteries-obligations-fe-tag || 'latest' }}
+          waste-batteries-reg-backend-tag: ${{ env.WASTE_BATTERIES_REG_BACKEND_TAG || inputs.waste-batteries-reg-backend-tag || 'latest' }}
+          waste-batteries-submit-backend-tag: ${{ env.WASTE_BATTERIES_SUBMIT_BACKEND_TAG || inputs.waste-batteries-submit-backend-tag || 'latest' }}
+          waste-batteries-obligations-be-tag: ${{ env.WASTE_BATTERIES_OBLIGATIONS_BE_TAG || inputs.waste-batteries-obligations-be-tag || 'latest' }}
+          browser: ${{ inputs.browser || 'chromium' }}
+          profile: ${{ inputs.profile }}

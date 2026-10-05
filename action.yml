@@ -1,0 +1,114 @@
+name: Run Batteries Journey Tests
+description: End-to-end regression tests for Batteries EPR, run against the Docker Compose stack
+
+# Usage from a service repo (e.g. after building and pushing a new image):
+#   - uses: DEFRA/batteries-journey-tests@main
+#     with:
+#       waste-batteries-reg-frontend-tag: ${{ steps.version.outputs.tag }}
+#
+# Each *-tag input sets the matching *_TAG variable in compose.yml. A tag of
+# "local" uses an image already built on the runner (see compose.build.yml).
+
+inputs:
+  waste-batteries-reg-frontend-tag:
+    description: Image tag for waste-batteries-reg-frontend (WASTE_BATTERIES_REG_FRONTEND_TAG)
+    required: false
+    default: latest
+  waste-batteries-submit-frontend-tag:
+    description: Image tag for waste-batteries-submit-frontend (WASTE_BATTERIES_SUBMIT_FRONTEND_TAG)
+    required: false
+    default: latest
+  waste-batteries-obligations-fe-tag:
+    description: Image tag for waste-batteries-obligations-fe (WASTE_BATTERIES_OBLIGATIONS_FE_TAG)
+    required: false
+    default: latest
+  waste-batteries-reg-backend-tag:
+    description: Image tag for waste-batteries-reg-backend (WASTE_BATTERIES_REG_BACKEND_TAG)
+    required: false
+    default: latest
+  waste-batteries-submit-backend-tag:
+    description: Image tag for waste-batteries-submit-backend (WASTE_BATTERIES_SUBMIT_BACKEND_TAG)
+    required: false
+    default: latest
+  waste-batteries-obligations-be-tag:
+    description: Image tag for waste-batteries-obligations-be (WASTE_BATTERIES_OBLIGATIONS_BE_TAG)
+    required: false
+    default: latest
+  browser:
+    description: chromium, firefox or webkit
+    required: false
+    default: chromium
+  profile:
+    description: Test filter by title or @tag (e.g. @smoke). Blank runs everything.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: ${{ github.action_path }}/.nvmrc
+        cache: npm
+        cache-dependency-path: ${{ github.action_path }}/package-lock.json
+
+    - name: Install test dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --ignore-scripts
+
+    - name: Install Playwright browser
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        BROWSER: ${{ inputs.browser }}
+      run: npx playwright install --with-deps "$BROWSER"
+
+    - name: Docker login
+      uses: DEFRA/cdp-build-action/docker-login@main
+
+    - name: Start Docker Compose stack
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        WASTE_BATTERIES_REG_FRONTEND_TAG: ${{ inputs.waste-batteries-reg-frontend-tag }}
+        WASTE_BATTERIES_SUBMIT_FRONTEND_TAG: ${{ inputs.waste-batteries-submit-frontend-tag }}
+        WASTE_BATTERIES_OBLIGATIONS_FE_TAG: ${{ inputs.waste-batteries-obligations-fe-tag }}
+        WASTE_BATTERIES_REG_BACKEND_TAG: ${{ inputs.waste-batteries-reg-backend-tag }}
+        WASTE_BATTERIES_SUBMIT_BACKEND_TAG: ${{ inputs.waste-batteries-submit-backend-tag }}
+        WASTE_BATTERIES_OBLIGATIONS_BE_TAG: ${{ inputs.waste-batteries-obligations-be-tag }}
+      run: |
+        # Images built on the runner (tag "local") are not in the registry, so
+        # their pull fails and the local image is used.
+        docker compose pull --quiet --ignore-pull-failures
+        docker compose up --wait --wait-timeout 300 -d
+        docker compose images
+
+    - name: Run Playwright tests
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      env:
+        BROWSER: ${{ inputs.browser }}
+        PROFILE: ${{ inputs.profile }}
+      run: npm run pw:github
+
+    - name: Collect Docker Compose logs
+      if: always()
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: docker compose logs > compose-logs.txt
+
+    - name: Upload Playwright report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report
+        path: ${{ github.action_path }}/playwright-report
+
+    - name: Upload Docker Compose logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-compose-logs
+        path: ${{ github.action_path }}/compose-logs.txt

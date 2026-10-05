@@ -1,56 +1,47 @@
-name: Run Journey Tests on GitHub
+name: Run Batteries Journey Tests (run-journey-tests path)
+description: Delegates to the root action.yml of DEFRA/batteries-journey-tests
+
+# Kept because the CDP template points service repos at
+#   uses: DEFRA/batteries-journey-tests/run-journey-tests@main
+# Prefer `uses: DEFRA/batteries-journey-tests@main`. Keep inputs in sync with
+# the root action.yml.
 
 inputs:
-  example-node-backend:
+  waste-batteries-reg-frontend-tag:
     required: false
-    type: string
-  example-node-frontend:
+    default: latest
+  waste-batteries-submit-frontend-tag:
     required: false
-    type: string
+    default: latest
+  waste-batteries-obligations-fe-tag:
+    required: false
+    default: latest
+  waste-batteries-reg-backend-tag:
+    required: false
+    default: latest
+  waste-batteries-submit-backend-tag:
+    required: false
+    default: latest
+  waste-batteries-obligations-be-tag:
+    required: false
+    default: latest
+  browser:
+    required: false
+    default: chromium
+  profile:
+    required: false
+    default: ''
 
 runs:
-  using: "composite"
+  using: composite
   steps:
-    - uses: actions/checkout@v4
+    - uses: DEFRA/batteries-journey-tests@main
       with:
-        repository: DEFRA/cdp-node-journey-test-suite-template
-
-    - name: Docker Login
-      uses: DEFRA/cdp-build-action/docker-login@main
-
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: npm
-    - name: Setup the tests
-      run: npm i
-      shell: bash
-    - name: Start docker compose
-      shell: bash
-      run: |
-          CDP_EXAMPLE_NODE_FRONTEND=${{inputs.example-node-frontend}} \
-          CDP_EXAMPLE_NODE_BACKEND=${{inputs.example-node-backend}} \
-          docker compose up --wait-timeout 300 -d --quiet-pull
-    - name: Run the tests
-      shell: bash
-      run: |
-        npm run test:github
-        npm run report
-    - name: debug
-      if: always()
-      run: |
-        docker compose logs > logs.txt
-        docker ps
-      shell: bash
-    - name: Upload allure report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: allure-report
-        path: ./allure-report
-    - name: Upload docker compose logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: docker-compose-logs
-        path: ./logs.txt
+        waste-batteries-reg-frontend-tag: ${{ inputs.waste-batteries-reg-frontend-tag }}
+        waste-batteries-submit-frontend-tag: ${{ inputs.waste-batteries-submit-frontend-tag }}
+        waste-batteries-obligations-fe-tag: ${{ inputs.waste-batteries-obligations-fe-tag }}
+        waste-batteries-reg-backend-tag: ${{ inputs.waste-batteries-reg-backend-tag }}
+        waste-batteries-submit-backend-tag: ${{ inputs.waste-batteries-submit-backend-tag }}
+        waste-batteries-obligations-be-tag: ${{ inputs.waste-batteries-obligations-be-tag }}
+        browser: ${{ inputs.browser }}
+        profile: ${{ inputs.profile }}
