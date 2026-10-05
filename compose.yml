@@ -21,7 +21,7 @@
 # Run against published DockerHub images:
 #   docker compose pull
 #   docker compose up --wait
-#   npm run pw:github
+#   npm run test:github
 #
 # Pin an image version with its *_TAG variable, e.g.
 #   WASTE_BATTERIES_REG_FRONTEND_TAG=0.9.0 docker compose up --wait
@@ -277,7 +277,7 @@ services:
       OBLIGATIONS_FRONTEND_URL: http://waste-batteries-obligations-fe:3000
       BROWSER: ${BROWSER:-chromium}
       PROFILE: ${PROFILE:-}
-    command: ['sh', '-c', 'npm ci --ignore-scripts && npm run pw:github']
+    command: ['sh', '-c', 'npm ci --ignore-scripts && npm run test:github']
     depends_on:
       waste-batteries-reg-frontend:
         condition: service_healthy

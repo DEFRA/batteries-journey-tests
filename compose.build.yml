@@ -4,7 +4,7 @@
 # (override a location with its *_PATH variable).
 #
 #   docker compose -f compose.yml -f compose.build.yml up --build --wait
-#   npm run pw:github
+#   npm run test:github
 #
 # Built images are tagged :local, so they never overwrite pulled :latest images.
 # To build only some services and pull the rest (e.g. a Depends-On branch):

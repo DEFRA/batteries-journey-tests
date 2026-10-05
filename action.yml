@@ -91,7 +91,7 @@ runs:
       env:
         BROWSER: ${{ inputs.browser }}
         PROFILE: ${{ inputs.profile }}
-      run: npm run pw:github
+      run: npm run test:github
 
     - name: Collect Docker Compose logs
       if: always()

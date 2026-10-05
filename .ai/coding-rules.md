@@ -93,6 +93,9 @@ get saveButton() {
 
 - `npm run lint` (ESLint) and `npm run format:check` (Prettier) must pass; the
   pre-commit hook runs both.
+- `eslint-plugin-playwright` (recommended rules) runs on `tests/`; it fails
+  the build on `waitForTimeout`, `test.only`, `test.skip` and tests with no
+  assertion.
 - Prettier style: no semicolons, single quotes, 2-space indent, no trailing
   commas.
 - `no-console` is an error — use Playwright's reporters, `test.info()`
@@ -107,4 +110,3 @@ get saveButton() {
 - Retrying flaky steps in code (`for` loops around clicks, `try`/`catch`
   around assertions). Fix the cause.
 - Editing generated output: `playwright-report/`, `test-results/`.
-- Extending the legacy `tests/wdio/` suite.

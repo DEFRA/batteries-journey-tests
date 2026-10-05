@@ -6,8 +6,7 @@
       "#pages/*": ["./tests/pages/*"],
       "#flows/*": ["./tests/flows/*"],
       "#fixtures/*": ["./tests/fixtures/*"],
-      "#utils/*": ["./tests/utils/*"],
-      "#components/*": ["./tests/components/*"]
+      "#utils/*": ["./tests/utils/*"]
     }
   },
   "exclude": ["node_modules", "build", "docker"]

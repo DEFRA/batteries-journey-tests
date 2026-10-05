@@ -70,9 +70,6 @@ compose.yml, compose.build.yml
 action.yml    # composite action other repos use to run this suite
 ```
 
-`tests/wdio/` and the `wdio.*.conf.js` files are the legacy WebdriverIO suite,
-kept only until migration step 8 removes them. Do not extend them.
-
 ### Layers
 
 ```
@@ -133,20 +130,20 @@ Full rules: [.ai/coding-rules.md](.ai/coding-rules.md).
 - [ ] Tagged when it belongs to a run profile (`{ tag: '@smoke' }`).
 - [ ] Role/label/test-id locators only; no `waitForTimeout`; web-first assertions.
 - [ ] Independent of other tests and of run order (parallel-safe).
-- [ ] `npm run pw:local` passes against running services, and `npm run pw:github`
+- [ ] `npm run test:local` passes against running services, and `npm run test:github`
       passes against the Compose stack.
 - [ ] `npm run lint` and `npm run format:check` pass.
 
 ## Run modes
 
-| Mode   | Services                     | Command                                         |
-| ------ | ---------------------------- | ----------------------------------------------- |
-| local  | Already running on localhost | `npm run pw:local` (headed, report opens after) |
-| github | Docker Compose stack         | `npm run stack:up` then `npm run pw:github`     |
-| e2e    | Deployed CDP environment     | `ENVIRONMENT=dev npm run pw:e2e`                |
+| Mode   | Services                     | Command                                           |
+| ------ | ---------------------------- | ------------------------------------------------- |
+| local  | Already running on localhost | `npm run test:local` (headed, report opens after) |
+| github | Docker Compose stack         | `npm run stack:up` then `npm run test:github`     |
+| e2e    | Deployed CDP environment     | `ENVIRONMENT=dev npm run test:e2e`                |
 
-`pw:*` scripts become `test:*` when migration step 8 lands. Details, env vars
-and Docker set-up: [README.md](README.md).
+Debug a test with `npm run test:local:debug` (Playwright Inspector). Details,
+env vars and Docker set-up: [README.md](README.md).
 
 ## CI and platform constraints
 

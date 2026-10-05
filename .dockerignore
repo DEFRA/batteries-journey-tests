@@ -6,6 +6,4 @@ Dockerfile
 .ai
 playwright-report
 test-results
-allure-results
-allure-report
 playwright-migration-prompt-batteries.md

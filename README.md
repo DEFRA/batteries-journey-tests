@@ -50,9 +50,6 @@ npx playwright install chromium   # add firefox / webkit to test those browsers
 
 Three run modes, chosen with `RUN_MODE` (the npm scripts set it for you).
 
-> The `pw:*` scripts are temporary names while WebdriverIO is being removed;
-> they become `test:*` when the migration finishes.
-
 ### Against services already running on localhost
 
 Fastest loop for writing a test. Start the frontends (and the backends they
@@ -67,7 +64,7 @@ npm run dev                                            # http://localhost:3000
 Then:
 
 ```bash
-npm run pw:local
+npm run test:local
 ```
 
 The browser is visible and the HTML report opens when the run finishes. Point
@@ -80,7 +77,7 @@ Closest local copy of CI. This is the same command the GitHub workflow runs.
 
 ```bash
 npm run stack:up        # pull DockerHub images, start everything, wait for health
-npm run pw:github
+npm run test:github
 npm run stack:down
 ```
 
@@ -89,14 +86,14 @@ On Apple silicon, build the services from the sibling repos instead (see
 
 ```bash
 npm run stack:up:build
-npm run pw:github
+npm run test:github
 ```
 
 ### Against a CDP environment
 
 ```bash
-ENVIRONMENT=dev npm run pw:e2e
-ENVIRONMENT=test npm run pw:e2e
+ENVIRONMENT=dev npm run test:e2e
+ENVIRONMENT=test npm run test:e2e
 ```
 
 Targets `https://waste-batteries-*.${ENVIRONMENT}.cdp-int.defra.cloud`. CDP
@@ -106,28 +103,29 @@ environments are only reachable from the platform, so this normally runs on the
 ### Other useful commands
 
 ```bash
-BROWSER=firefox npm run pw:github     # chromium (default), firefox, webkit
-PROFILE=@smoke npm run pw:github      # only tests whose title or tag matches
-npm run pw:report                     # reopen the last HTML report
+BROWSER=firefox npm run test:github     # chromium (default), firefox, webkit
+PROFILE=@smoke npm run test:github      # only tests whose title or tag matches
+npm run test:report                   # reopen the last HTML report
+npm run test:local:debug              # step through with the Playwright Inspector
 npm run lint && npm run format:check
 ```
 
 ## Environment variables
 
-| Variable                    | Default                        | Purpose                                                                |
-| --------------------------- | ------------------------------ | ---------------------------------------------------------------------- |
-| `RUN_MODE`                  | `local`                        | `local`, `github` or `e2e` (set by the npm scripts)                    |
-| `ENVIRONMENT`               | `dev`                          | CDP environment for `e2e` mode                                         |
-| `BROWSER`                   | `chromium`                     | `chromium`, `firefox` or `webkit`                                      |
-| `HEADED`                    | `false` (`true` in `pw:local`) | Show the browser                                                       |
-| `PROFILE`                   | —                              | Filter tests by title or `@tag` (regex), e.g. `@smoke`                 |
-| `REGISTRATION_FRONTEND_URL` | `http://localhost:3000`        | Registration frontend (ignored in `e2e` mode)                          |
-| `SUBMISSIONS_FRONTEND_URL`  | `http://localhost:3001`        | Submissions frontend (ignored in `e2e` mode)                           |
-| `OBLIGATIONS_FRONTEND_URL`  | `http://localhost:3002`        | Obligations frontend (ignored in `e2e` mode)                           |
-| `HTTP_PROXY`                | —                              | Egress proxy; set by the CDP Portal                                    |
-| `CI`                        | —                              | Set by `pw:github`: one worker, one retry, `test.only` forbidden       |
-| `<SERVICE>_TAG`             | `latest`                       | Compose image tag per service, e.g. `WASTE_BATTERIES_REG_FRONTEND_TAG` |
-| `<SERVICE>_PATH`            | `../<service>`                 | Source location for `compose.build.yml`                                |
+| Variable                    | Default                          | Purpose                                                                |
+| --------------------------- | -------------------------------- | ---------------------------------------------------------------------- |
+| `RUN_MODE`                  | `local`                          | `local`, `github` or `e2e` (set by the npm scripts)                    |
+| `ENVIRONMENT`               | `dev`                            | CDP environment for `e2e` mode                                         |
+| `BROWSER`                   | `chromium`                       | `chromium`, `firefox` or `webkit`                                      |
+| `HEADED`                    | `false` (`true` in `test:local`) | Show the browser                                                       |
+| `PROFILE`                   | —                                | Filter tests by title or `@tag` (regex), e.g. `@smoke`                 |
+| `REGISTRATION_FRONTEND_URL` | `http://localhost:3000`          | Registration frontend (ignored in `e2e` mode)                          |
+| `SUBMISSIONS_FRONTEND_URL`  | `http://localhost:3001`          | Submissions frontend (ignored in `e2e` mode)                           |
+| `OBLIGATIONS_FRONTEND_URL`  | `http://localhost:3002`          | Obligations frontend (ignored in `e2e` mode)                           |
+| `HTTP_PROXY`                | —                                | Egress proxy; set by the CDP Portal                                    |
+| `CI`                        | —                                | Set by `test:github`: one worker, one retry, `test.only` forbidden     |
+| `<SERVICE>_TAG`             | `latest`                         | Compose image tag per service, e.g. `WASTE_BATTERIES_REG_FRONTEND_TAG` |
+| `<SERVICE>_PATH`            | `../<service>`                   | Source location for `compose.build.yml`                                |
 
 ## Folder structure
 
@@ -148,9 +146,6 @@ playwright.config.js
 compose.yml, compose.build.yml
 action.yml             # composite action for running this suite from other repos
 ```
-
-`tests/wdio/` and `wdio.*.conf.js` are the legacy WebdriverIO suite, kept until
-the migration removes them.
 
 ## Docker Compose stack
 
@@ -228,7 +223,7 @@ docker run --rm --network batteries-journey-tests_batteries-journey-tests \
 ## GitHub workflow
 
 [`.github/workflows/journey-tests.yml`](.github/workflows/journey-tests.yml)
-starts the Compose stack on the runner and runs `npm run pw:github`. It runs
+starts the Compose stack on the runner and runs `npm run test:github`. It runs
 on every pull request (via `check-pull-request.yml`) and can be started by hand
 or called from another workflow.
 

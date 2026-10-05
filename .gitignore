@@ -8,8 +8,6 @@ npm-debug.log
 coverage
 .cache
 .png
-allure-report/
-allure-results/
 FAILED
 
 # Local migration prompt (never committed)

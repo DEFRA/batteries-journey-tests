@@ -1,24 +1,16 @@
 import { defineConfig } from 'eslint/config'
 import js from '@eslint/js'
 import globals from 'globals'
+import playwright from 'eslint-plugin-playwright'
 import eslintPluginPrettier from 'eslint-plugin-prettier'
 import eslintConfigPrettier from 'eslint-config-prettier/flat'
-import { configs as wdioConfig } from 'eslint-plugin-wdio'
 
 export default defineConfig([
   {
-    ignores: [
-      'allure-results/',
-      'allure-report/',
-      'playwright-report/',
-      'test-results/',
-      'docker/'
-    ]
+    ignores: ['playwright-report/', 'test-results/', 'docker/']
   },
 
   js.configs.recommended,
-
-  wdioConfig['flat/recommended'],
 
   {
     files: ['**/*.js'],
@@ -26,8 +18,7 @@ export default defineConfig([
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
-        ...globals.node,
-        ...globals.mocha
+        ...globals.node
       }
     },
     plugins: {
@@ -37,6 +28,25 @@ export default defineConfig([
       'prettier/prettier': 'error',
       'no-console': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+    }
+  },
+
+  {
+    files: ['tests/**/*.js'],
+    ...playwright.configs['flat/recommended'],
+    rules: {
+      ...playwright.configs['flat/recommended'].rules,
+      // .ai/coding-rules.md: no fixed sleeps, no focused or skipped tests.
+      'playwright/no-wait-for-timeout': 'error',
+      'playwright/no-focused-test': 'error',
+      'playwright/no-skipped-test': 'error',
+      // Specs import test/expect from #fixtures/index.js, so tell the plugin.
+      'playwright/expect-expect': ['error', { assertFunctionNames: ['expect'] }]
+    },
+    settings: {
+      playwright: {
+        globalAliases: { test: ['test'] }
+      }
     }
   },
 
