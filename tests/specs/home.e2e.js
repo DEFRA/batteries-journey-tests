@@ -1,6 +1,6 @@
 import { browser, expect } from '@wdio/globals'
 
-import HomePage from '#page-objects/home.page'
+import HomePage from '#pages/home.page'
 
 describe('Home page', () => {
   it('Should be on the "Home" page', async () => {
