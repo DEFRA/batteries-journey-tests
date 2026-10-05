@@ -1,3 +1,6 @@
 package-lock.json
 node_modules
 docker
+
+# Local migration prompt (never committed)
+playwright-migration-prompt-batteries.md

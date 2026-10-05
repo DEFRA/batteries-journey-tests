@@ -11,3 +11,6 @@ coverage
 allure-report/
 allure-results/
 FAILED
+
+# Local migration prompt (never committed)
+playwright-migration-prompt-batteries.md
