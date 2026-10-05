@@ -46,21 +46,30 @@ inputs:
 runs:
   using: composite
   steps:
+    # github.action_path can contain "/./" (when used as `uses: ./`) and lies
+    # outside the workspace when called from another repo, which setup-node's
+    # node-version-file and upload-artifact's path both reject. Resolve it once.
+    - name: Resolve action directory
+      id: action
+      shell: bash
+      run: |
+        dir=$(cd "$GITHUB_ACTION_PATH" && pwd -P)
+        echo "dir=$dir" >> "$GITHUB_OUTPUT"
+        echo "node-version=$(cat "$dir/.nvmrc")" >> "$GITHUB_OUTPUT"
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version-file: ${{ github.action_path }}/.nvmrc
-        cache: npm
-        cache-dependency-path: ${{ github.action_path }}/package-lock.json
+        node-version: ${{ steps.action.outputs.node-version }}
 
     - name: Install test dependencies
       shell: bash
-      working-directory: ${{ github.action_path }}
+      working-directory: ${{ steps.action.outputs.dir }}
       run: npm ci --ignore-scripts
 
     - name: Install Playwright browser
       shell: bash
-      working-directory: ${{ github.action_path }}
+      working-directory: ${{ steps.action.outputs.dir }}
       env:
         BROWSER: ${{ inputs.browser }}
       run: npx playwright install --with-deps "$BROWSER"
@@ -70,7 +79,7 @@ runs:
 
     - name: Start Docker Compose stack
       shell: bash
-      working-directory: ${{ github.action_path }}
+      working-directory: ${{ steps.action.outputs.dir }}
       env:
         WASTE_BATTERIES_REG_FRONTEND_TAG: ${{ inputs.waste-batteries-reg-frontend-tag }}
         WASTE_BATTERIES_SUBMIT_FRONTEND_TAG: ${{ inputs.waste-batteries-submit-frontend-tag }}
@@ -87,7 +96,7 @@ runs:
 
     - name: Run Playwright tests
       shell: bash
-      working-directory: ${{ github.action_path }}
+      working-directory: ${{ steps.action.outputs.dir }}
       env:
         BROWSER: ${{ inputs.browser }}
         PROFILE: ${{ inputs.profile }}
@@ -96,7 +105,7 @@ runs:
     - name: Collect Docker Compose logs
       if: always()
       shell: bash
-      working-directory: ${{ github.action_path }}
+      working-directory: ${{ steps.action.outputs.dir }}
       run: docker compose logs > compose-logs.txt
 
     - name: Upload Playwright report
@@ -104,11 +113,11 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: playwright-report
-        path: ${{ github.action_path }}/playwright-report
+        path: ${{ steps.action.outputs.dir }}/playwright-report
 
     - name: Upload Docker Compose logs
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: docker-compose-logs
-        path: ${{ github.action_path }}/compose-logs.txt
+        path: ${{ steps.action.outputs.dir }}/compose-logs.txt
