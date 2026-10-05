@@ -14,3 +14,7 @@ FAILED
 
 # Local migration prompt (never committed)
 playwright-migration-prompt-batteries.md
+
+# Playwright
+playwright-report/
+test-results/

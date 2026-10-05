@@ -18,6 +18,10 @@
     "test:local:debug": "npm run clean && DEBUG=true wdio run wdio.local.conf.js",
     "test:github": "npm run clean && wdio run wdio.github.conf.js",
     "test:github:browserstack": "npm run clean && wdio run wdio.github.browserstack.conf.js",
+    "pw:local": "RUN_MODE=local HEADED=true playwright test",
+    "pw:github": "CI=true RUN_MODE=github playwright test",
+    "pw:e2e": "RUN_MODE=e2e playwright test",
+    "pw:report": "playwright show-report",
     "format": "prettier --write 'tests/**/*.js' '**/*.{js,md,json,config.js}'",
     "format:check": "prettier --check 'tests/**/*.js' '**/*.{js,md,json,config.js}'",
     "git:pre-commit-hook": "npm run format:check && npm run lint",
@@ -43,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
     "eslint": "10.9.1",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.6",
