@@ -1,0 +1,3 @@
+# Keep LF everywhere so shell scripts run in Linux containers when
+# checked out on Windows (core.autocrlf would otherwise convert them).
+* text=auto eol=lf

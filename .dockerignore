@@ -3,3 +3,7 @@ Dockerfile
 .git
 .github
 .husky
+.ai
+playwright-report
+test-results
+playwright-migration-prompt-batteries.md

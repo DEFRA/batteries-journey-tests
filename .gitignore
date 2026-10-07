@@ -8,6 +8,15 @@ npm-debug.log
 coverage
 .cache
 .png
-allure-report/
-allure-results/
 FAILED
+
+# Local migration prompt (never committed)
+playwright-migration-prompt-batteries.md
+
+# Playwright
+playwright-report/
+test-results/
+
+# CI: service checkouts and compose logs (journey-tests workflow)
+services/
+compose-logs.txt

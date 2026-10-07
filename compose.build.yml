@@ -1,0 +1,47 @@
+################################################################################
+# Overlay: build the six Batteries services from the sibling repos instead of
+# pulling them from DockerHub (§7.1b). Siblings must be cloned next to this repo
+# (override a location with its *_PATH variable).
+#
+#   docker compose -f compose.yml -f compose.build.yml up --build --wait
+#   npm run test:github
+#
+# Built images are tagged :local, so they never overwrite pulled :latest images.
+# To build only some services and pull the rest (e.g. a Depends-On branch):
+#   docker compose -f compose.yml -f compose.build.yml build waste-batteries-reg-frontend
+#   WASTE_BATTERIES_REG_FRONTEND_TAG=local docker compose up --wait
+#
+# Images on DockerHub are linux/amd64 only. On Apple silicon without Rosetta
+# emulation the .NET backends fail (HTTP 500 on /health) — building here
+# produces native arm64 images that work.
+################################################################################
+services:
+  waste-batteries-reg-frontend:
+    image: defradigital/waste-batteries-reg-frontend:local
+    build:
+      context: ${WASTE_BATTERIES_REG_FRONTEND_PATH:-../waste-batteries-reg-frontend}
+
+  waste-batteries-submit-frontend:
+    image: defradigital/waste-batteries-submit-frontend:local
+    build:
+      context: ${WASTE_BATTERIES_SUBMIT_FRONTEND_PATH:-../waste-batteries-submit-frontend}
+
+  waste-batteries-obligations-fe:
+    image: defradigital/waste-batteries-obligations-fe:local
+    build:
+      context: ${WASTE_BATTERIES_OBLIGATIONS_FE_PATH:-../waste-batteries-obligations-fe}
+
+  waste-batteries-reg-backend:
+    image: defradigital/waste-batteries-reg-backend:local
+    build:
+      context: ${WASTE_BATTERIES_REG_BACKEND_PATH:-../waste-batteries-reg-backend}
+
+  waste-batteries-submit-backend:
+    image: defradigital/waste-batteries-submit-backend:local
+    build:
+      context: ${WASTE_BATTERIES_SUBMIT_BACKEND_PATH:-../waste-batteries-submit-backend}
+
+  waste-batteries-obligations-be:
+    image: defradigital/waste-batteries-obligations-be:local
+    build:
+      context: ${WASTE_BATTERIES_OBLIGATIONS_BE_PATH:-../waste-batteries-obligations-be}

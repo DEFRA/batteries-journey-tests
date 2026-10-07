@@ -1,108 +1,324 @@
 ################################################################################
-# Docker Compose file for starting up the service for testing in GitHub workflow
-# This template provides comparable infrastructure to the real environment.
-#   - mongodb
-#   - redis
-#   - localstack (s3, sqs, sns)
+# Docker Compose stack for the Batteries journey tests.
 #
-# Both mongo and localstack have init scripts included for setting up resources
-# on startup. These scripts are in docker/scripts.
+# Infrastructure:
+#   - mongodb, redis, floci (LocalStack substitute: s3, sqs, sns, dynamodb)
+#   - cdp-defra-id-stub, cdp-uploader
 #
-# It also includes a selenium-chrome container for running the browser headless.
+# Application services (published host port → container port):
+#   - waste-batteries-reg-frontend        3000 → 3000
+#   - waste-batteries-submit-frontend     3001 → 3000
+#   - waste-batteries-obligations-fe      3002 → 3000
+#   - waste-batteries-reg-backend         (internal) 8085
+#   - waste-batteries-submit-backend      (internal) 8085
+#   - waste-batteries-obligations-be      (internal) 8085
 #
-# The services being tested can either be started up here using the latest
-# builds from dockerhub.
-# In the example each service has a .env config file in docker/config/
-# Services can reference each other by their container names.
-# e.g. http://cdp-example-node-backend:3001/
+# floci init scripts in docker/scripts/floci pre-populate AWS resources.
+# Per-service env config is in docker/config/.
+# Every service is on the batteries-journey-tests network and resolves the
+# others by service name.
 #
+# Run against published DockerHub images:
+#   docker compose pull
+#   docker compose up --wait
+#   npm run test:github
+#
+# Pin an image version with its *_TAG variable, e.g.
+#   WASTE_BATTERIES_REG_FRONTEND_TAG=0.9.0 docker compose up --wait
+#
+# Build services from the sibling repos instead — see compose.build.yml.
+#
+# Run the tests inside the stack (optional Playwright container):
+#   docker compose --profile playwright run --rm playwright
 ################################################################################
+networks:
+  batteries-journey-tests:
+    driver: bridge
+
+x-frontend-healthcheck: &frontend-healthcheck
+  test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:3000/health']
+  interval: 5s
+  start_period: 10s
+  retries: 10
+
+x-backend-healthcheck: &backend-healthcheck
+  test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8085/health']
+  interval: 5s
+  start_period: 10s
+  retries: 10
+
 services:
-
-################################################################################
-# Headless browser, used by the test suite to actually run the tests against the
-# containers.
-  selenium-chrome:
-    image: selenium/standalone-chrome:123.0
-    ports:
-      - 4444:4444
-
-################################################################################
+  ################################################################################
   mongodb:
-    image: mongo:6
+    image: mongo:7.0.28
+    networks:
+      - batteries-journey-tests
     volumes:
-      - ./docker/scripts/mongodb:/docker-entrypoint-initdb.d
+      - ./docker/scripts/mongodb:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.hello().ok"]
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.hello().ok']
       interval: 5s
-      start_period: 5s
-      retries: 3
-################################################################################
-  localstack:
-    image: localstack/localstack:3.2.0
-    environment:
-      - LOCALSTACK_HOST=127.0.0.1
-      - SERVICES=s3,sqs,sns,dynamodb
-      - LS_LOG=WARN
-    env_file:
-      - ./docker/config/defaults.env
-    volumes:
-      - ./docker/scripts/localstack:/etc/localstack/init/ready.d
-    healthcheck:
-      test: ["CMD", "curl", "localhost:4566"]
-      interval: 5s
-      start_period: 5s
-      retries: 3
+      start_period: 10s
+      retries: 10
 
-################################################################################
+  ################################################################################
   redis:
-    image: redis:7
-    restart: always
+    image: redis:7.2.3-alpine3.18
+    networks:
+      - batteries-journey-tests
     healthcheck:
-      test: [ "CMD", "redis-cli", "PING" ]
+      test: ['CMD', 'redis-cli', 'PING']
       interval: 5s
       start_period: 2s
       retries: 5
 
+  ################################################################################
+  floci:
+    image: hectorvent/floci:latest-aws
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+    environment:
+      FLOCI_DEFAULT_REGION: eu-west-2
+      # Init scripts run inside this container, so the aws CLI talks to itself.
+      AWS_ENDPOINT_URL: http://localhost:4566
+    volumes:
+      - ./docker/scripts/floci:/etc/floci/init/start.d:ro
+    ports:
+      - '4566:4566'
+
+  ################################################################################
+  # Defra ID stub. Frontends and backends reach it container-to-container by
+  # service name. A journey that signs in will also need the browser to reach
+  # it — map cdp-defra-id-stub:3200 to localhost:3200 (e.g. a Playwright route
+  # rewrite) when the first login journey is added.
+  cdp-defra-id-stub:
+    image: defradigital/cdp-defra-id-stub:${CDP_DEFRA_ID_STUB_TAG:-0.36.0}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+    environment:
+      PORT: 3200
+      NODE_ENV: development
+      APP_BASE_URL: http://cdp-defra-id-stub:3200
+      REGISTRATIONS_STORE_ENGINE: dynamodb
+      AWS_DYNAMODB_REGISTRATIONS_TABLE_NAME: cdp-defra-id-stub-registrations
+      DYNAMODB_ENDPOINT: http://floci:4566
+    ports:
+      - '3200:3200'
+    depends_on:
+      floci:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3200/cdp-defra-id-stub/.well-known/openid-configuration || exit 1
+      interval: 5s
+      start_period: 10s
+      retries: 12
+
+  ################################################################################
+  # CDP Uploader — multipart uploads, mocked virus scan, S3 storage.
+  # APP_BASE_URL uses localhost so upload URLs embedded in forms are reachable
+  # from the test browser on the host. Published for linux/amd64 only, so it runs
+  # under emulation on Apple silicon.
+  cdp-uploader:
+    image: defradigital/cdp-uploader:${CDP_UPLOADER_TAG:-1.27.0}
+    platform: linux/amd64
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+    environment:
+      PORT: 7337
+      NODE_ENV: development
+      APP_BASE_URL: http://localhost:7337
+      CONSUMER_BUCKETS: batteries-uploads
+      S3_CDP_QUARANTINE_BUCKET: cdp-uploader-quarantine
+      MOCK_VIRUS_SCAN_ENABLED: 'true'
+    ports:
+      - '7337:7337'
+    depends_on:
+      floci:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:7337/health']
+      interval: 5s
+      start_period: 20s
+      retries: 10
+
+  ################################################################################
+  waste-batteries-reg-backend:
+    image: defradigital/waste-batteries-reg-backend:${WASTE_BATTERIES_REG_BACKEND_TAG:-latest}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+      - ./docker/config/waste-batteries-reg-backend.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    healthcheck: *backend-healthcheck
+
+  ################################################################################
+  waste-batteries-submit-backend:
+    image: defradigital/waste-batteries-submit-backend:${WASTE_BATTERIES_SUBMIT_BACKEND_TAG:-latest}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+      - ./docker/config/waste-batteries-submit-backend.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    healthcheck: *backend-healthcheck
+
+  ################################################################################
+  waste-batteries-obligations-be:
+    image: defradigital/waste-batteries-obligations-be:${WASTE_BATTERIES_OBLIGATIONS_BE_TAG:-latest}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+      - ./docker/config/waste-batteries-obligations-be.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      floci:
+        condition: service_healthy
+    healthcheck: *backend-healthcheck
+
+  ################################################################################
+  waste-batteries-reg-frontend:
+    image: defradigital/waste-batteries-reg-frontend:${WASTE_BATTERIES_REG_FRONTEND_TAG:-latest}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+      - ./docker/config/waste-batteries-reg-frontend.env
+    ports:
+      - '3000:3000'
+    depends_on:
+      waste-batteries-reg-backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cdp-defra-id-stub:
+        condition: service_healthy
+    healthcheck: *frontend-healthcheck
+
+  ################################################################################
+  waste-batteries-submit-frontend:
+    image: defradigital/waste-batteries-submit-frontend:${WASTE_BATTERIES_SUBMIT_FRONTEND_TAG:-latest}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+      - ./docker/config/waste-batteries-submit-frontend.env
+    ports:
+      - '3001:3000'
+    depends_on:
+      waste-batteries-submit-backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cdp-defra-id-stub:
+        condition: service_healthy
+    healthcheck: *frontend-healthcheck
+
+  ################################################################################
+  waste-batteries-obligations-fe:
+    image: defradigital/waste-batteries-obligations-fe:${WASTE_BATTERIES_OBLIGATIONS_FE_TAG:-latest}
+    networks:
+      - batteries-journey-tests
+    env_file:
+      - ./docker/config/defaults.env
+      - ./docker/config/waste-batteries-obligations-fe.env
+    ports:
+      - '3002:3000'
+    depends_on:
+      waste-batteries-obligations-be:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cdp-defra-id-stub:
+        condition: service_healthy
+    healthcheck: *frontend-healthcheck
+
+  ################################################################################
+  # Optional: run the suite inside the stack instead of on the host.
+  #   docker compose --profile playwright run --rm playwright
+  # Frontends are addressed by service name; the report lands in
+  # ./playwright-report on the host.
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    profiles:
+      - playwright
+    networks:
+      - batteries-journey-tests
+    working_dir: /app
+    volumes:
+      - ./:/app
+      # Keep the container's node_modules separate from the host's.
+      - /app/node_modules
+    environment:
+      REGISTRATION_FRONTEND_URL: http://waste-batteries-reg-frontend:3000
+      SUBMISSIONS_FRONTEND_URL: http://waste-batteries-submit-frontend:3000
+      OBLIGATIONS_FRONTEND_URL: http://waste-batteries-obligations-fe:3000
+      BROWSER: ${BROWSER:-chromium}
+      PROFILE: ${PROFILE:-}
+    command: ['sh', '-c', 'npm ci --ignore-scripts && npm run test:github']
+    depends_on:
+      waste-batteries-reg-frontend:
+        condition: service_healthy
+      waste-batteries-submit-frontend:
+        condition: service_healthy
+      waste-batteries-obligations-fe:
+        condition: service_healthy
 
 ################################################################################
 #
-# Add the services you want to test below.
+# Template: add a new service by uncommenting and adjusting one of these, then
+# add its env file in docker/config/ and its build entry in compose.build.yml.
 #
 ################################################################################
-#  cdp-example-node-frontend:
-#    image: defradigital/cdp-example-node-frontend:${CDP_EXAMPLE_NODE_FRONTEND:-latest}
+#  example-frontend:
+#    image: defradigital/example-frontend:${EXAMPLE_FRONTEND_TAG:-latest}
+#    networks:
+#      - batteries-journey-tests
 #    env_file:
 #      - ./docker/config/defaults.env
 #      - ./docker/config/example-frontend.env
-#    environment:
-#      - PORT=3000
+#    ports:
+#      - '3003:3000'
 #    depends_on:
-#      cdp-example-node-backend:
-#        condition: service_started
+#      example-backend:
+#        condition: service_healthy
 #      redis:
 #        condition: service_healthy
-#    ports:
-#      - 3000:3000
-#    healthcheck:
-#      test: ["CMD", "curl", "http://localhost:3000/health"]
-#      interval: 3s
-#      start_period: 2s
-#      retries: 3
+#    healthcheck: *frontend-healthcheck
 
 ################################################################################
-# cdp-example-node-backend:
-#   image: defradigital/cdp-example-node-backend:${CDP_EXAMPLE_NODE_BACKEND:-latest}
-#   env_file:
-#     - ./docker/config/defaults.env
-#     - ./docker/config/example-backend.env
-#   environment:
-#     - PORT=3001
-#   depends_on:
-#     mongodb:
-#       condition: service_healthy
-#   healthcheck:
-#     test: ["CMD", "curl", "http://localhost:3001/health"]
-#     interval: 3s
-#     start_period: 2s
-#     retries: 3
+#  example-backend:
+#    image: defradigital/example-backend:${EXAMPLE_BACKEND_TAG:-latest}
+#    networks:
+#      - batteries-journey-tests
+#    env_file:
+#      - ./docker/config/defaults.env
+#      - ./docker/config/example-backend.env
+#    depends_on:
+#      mongodb:
+#        condition: service_healthy
+#      floci:
+#        condition: service_healthy
+#    healthcheck: *backend-healthcheck

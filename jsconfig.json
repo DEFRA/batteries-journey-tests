@@ -3,8 +3,10 @@
     "target": "es2020",
     "baseUrl": "./",
     "paths": {
-      "#page-objects/*": ["./test/page-objects/*"],
-      "#components/*": ["./test/components/*"]
+      "#pages/*": ["./tests/pages/*"],
+      "#flows/*": ["./tests/flows/*"],
+      "#fixtures/*": ["./tests/fixtures/*"],
+      "#utils/*": ["./tests/utils/*"]
     }
   },
   "exclude": ["node_modules", "build", "docker"]

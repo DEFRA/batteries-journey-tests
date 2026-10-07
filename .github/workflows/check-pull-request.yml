@@ -28,9 +28,15 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
 
-# Uncomment this to run the tests in your test suite
-#  tests:
-#    name: Run Journey Tests
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: DEFRA/cdp-node-journey-test-suite-template/run-journey-tests@main
+  # Depends-On lines in this PR's description pick the service branches to
+  # build; without them the published DockerHub images (main) are used.
+  journey-tests:
+    name: Run Journey Tests
+    uses: ./.github/workflows/journey-tests.yml
+    secrets: inherit
+    # A called workflow cannot hold more permissions than its caller grants.
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      id-token: write
