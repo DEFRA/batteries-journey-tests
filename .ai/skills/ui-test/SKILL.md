@@ -139,17 +139,13 @@ examplePage: async ({ page }, use) => {
 
 ### Page on another frontend
 
+`Page` takes an optional base URL (default: registration). Reuse the same Page
+Object class and inject it per frontend in `tests/fixtures/index.js`:
+
 ```js
-import { Page } from '#pages/page.js'
-import { frontendUrls } from '#utils/env.js'
-
-class SubmissionsHomePage extends Page {
-  async open() {
-    await super.open(new URL('/', frontendUrls.submissions).href)
-  }
+submissionsHomePage: async ({ page }, use) => {
+  await use(new HomePage(page, frontendUrls.submissions))
 }
-
-export { SubmissionsHomePage }
 ```
 
 ### Flow — `tests/flows/<journey>.flow.js` (only when two or more specs share it)
@@ -171,7 +167,7 @@ class SignInFlow {
 export { SignInFlow }
 ```
 
-### Spec — `tests/specs/<area>.e2e.js`
+### Spec — `tests/specs/<frontend>/<area>.e2e.js`
 
 (`/example` needs a signed-in user, so this spec stays `[BLOCKED]` until sign-in
 is wired up — it shows the shape, not a test to add today.)

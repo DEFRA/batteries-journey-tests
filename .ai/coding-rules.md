@@ -20,7 +20,7 @@ Rules for all code under `tests/`. Structure and workflow are in
 
 | Thing       | Location                  | File                | Export                     |
 | ----------- | ------------------------- | ------------------- | -------------------------- |
-| Spec        | `tests/specs/`            | `<area>.e2e.js`     | —                          |
+| Spec        | `tests/specs/<frontend>/` | `<area>.e2e.js`     | —                          |
 | Page Object | `tests/pages/`            | `<page>.page.js`    | `class <Page>Page`         |
 | Flow        | `tests/flows/`            | `<journey>.flow.js` | `class <Journey>Flow`      |
 | Fixture     | `tests/fixtures/index.js` | —                   | camelCase, e.g. `homePage` |
@@ -83,9 +83,10 @@ get saveButton() {
 - Read environment through `tests/utils/env.js` (`runMode`, `frontendUrls`,
   `browserName`, `proxyConfig`). Do not read `process.env` in specs or Page
   Objects.
-- Navigate with paths (`page.goto('/about')`); `baseURL` is the registration
-  frontend. For another frontend, use `frontendUrls.submissions` /
-  `frontendUrls.obligations` from a Page Object, never a hard-coded host.
+- Navigate with paths (`page.goto('/about')`); `Page` resolves paths against
+  the registration frontend by default. For another frontend, pass
+  `frontendUrls.submissions` / `frontendUrls.obligations` to the Page Object
+  (see the fixtures), never a hard-coded host.
 - No secrets in the repo. Credentials come from env vars set by the Portal or
   the workflow.
 

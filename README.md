@@ -131,7 +131,8 @@ npm run lint && npm run format:check
 
 ```
 tests/
-  specs/      # test files (*.e2e.js)
+  specs/      # test files (*.e2e.js), one subfolder per frontend:
+              #   registration/, submissions/, obligations/
   pages/      # Page Objects (*.page.js)
   flows/      # business workflows spanning several pages
   fixtures/   # test.extend() fixtures

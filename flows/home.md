@@ -11,7 +11,7 @@ on 2026-10-05
 
 ## Steps — registration frontend
 
-1. **Home** (`GET /`, signed in or out) [IMPLEMENTED] — E2E: `tests/specs/home.e2e.js` (`@smoke`)
+1. **Home** (`GET /`, signed in or out) [IMPLEMENTED] — E2E: `tests/specs/registration/home.e2e.js` (`@smoke`)
    - Title: "Home | waste-batteries-reg-frontend"; heading: "Home"
    - Caption under the heading: "waste-batteries-reg-frontend"
    - Service navigation: Home (current), About; Example only when signed in
@@ -34,13 +34,14 @@ on 2026-10-05
 
 ## Other frontends
 
-Same scaffold and the same branches. Out of scope for E2E by decision
-(2026-10-05: smoke test covers the registration home page only).
+Same scaffold and the same branches. Only the home page smoke test is written
+for these (2026-10-07: extended from registration only); the other branches
+are not covered.
 
 - **Submissions** `GET /` on `waste-batteries-submit-frontend` — title
-  "Home | waste-batteries-submit-frontend" [IMPLEMENTED] — E2E: not written
+  "Home | waste-batteries-submit-frontend" [IMPLEMENTED] — E2E: `tests/specs/submissions/home.e2e.js` (`@smoke`)
 - **Obligations** `GET /` on `waste-batteries-obligations-fe` — title
-  "Home | waste-batteries-obligations-fe" [IMPLEMENTED] — E2E: not written
+  "Home | waste-batteries-obligations-fe" [IMPLEMENTED] — E2E: `tests/specs/obligations/home.e2e.js` (`@smoke`)
 
 ## Notes
 
@@ -49,6 +50,6 @@ Same scaffold and the same branches. Out of scope for E2E by decision
   The E2E smoke test adds the deployed-service check: a real browser reaches
   the right service (full title) and the page renders its heading.
 - `serviceName` is still the repo name; when the real service name lands,
-  update the titles here first, then `tests/specs/home.e2e.js`.
+  update the titles here first, then the `home.e2e.js` under each `tests/specs/<frontend>/`.
 - `/example` is CDP scaffold that saves through the backends' example
   endpoints. Expect it to change or disappear rather than gain a test.

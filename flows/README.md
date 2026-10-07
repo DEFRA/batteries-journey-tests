@@ -6,9 +6,9 @@ between the services and the test suite is visible at a glance.
 
 ## Journeys
 
-| Journey   | File               | Owning frontend(s)                            | E2E specs                 |
-| --------- | ------------------ | --------------------------------------------- | ------------------------- |
-| Home page | [home.md](home.md) | registration (submissions, obligations noted) | `tests/specs/home.e2e.js` |
+| Journey   | File               | Owning frontend(s)                            | E2E specs                            |
+| --------- | ------------------ | --------------------------------------------- | ------------------------------------ |
+| Home page | [home.md](home.md) | registration (submissions, obligations noted) | `tests/specs/<frontend>/home.e2e.js` |
 
 Add a row when a new journey file is created.
 
@@ -21,7 +21,7 @@ Add a row when a new journey file is created.
 | `[PLANNED]`         | Not yet built in the frontend                                          |
 
 After an `[IMPLEMENTED]` marker, note the coverage:
-`— E2E: tests/specs/<file>.e2e.js` when a test exists, or `— E2E: not written`,
+`— E2E: tests/specs/<frontend>/<file>.e2e.js` when a test exists, or `— E2E: not written`,
 or `— E2E: descoped (<covering test>)` after a coverage-gap analysis.
 
 ## Maintenance rule

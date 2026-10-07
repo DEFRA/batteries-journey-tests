@@ -58,7 +58,8 @@ source wins and the flow file is updated.
 
 ```
 tests/
-  specs/      # test files (*.e2e.js) — orchestration and assertions only
+  specs/      # test files (*.e2e.js) — orchestration and assertions only;
+              # one subfolder per frontend: registration/, submissions/, obligations/
   pages/      # Page Objects (*.page.js) — UI interaction, one class per page
   flows/      # business workflows spanning several pages
   fixtures/   # test.extend() fixtures — inject Page Objects and flows
@@ -126,7 +127,7 @@ Full rules: [.ai/coding-rules.md](.ai/coding-rules.md).
 - [ ] Page, labels and routes taken from the frontend source, not guessed.
 - [ ] Page Object extends `Page` (`tests/pages/page.js`) or an existing Page Object
       gains the new behaviour; registered as a fixture.
-- [ ] Spec in `tests/specs/<area>.e2e.js`, uses fixtures, has no selectors.
+- [ ] Spec in `tests/specs/<frontend>/<area>.e2e.js`, uses fixtures, has no selectors.
 - [ ] Tagged when it belongs to a run profile (`{ tag: '@smoke' }`).
 - [ ] Role/label/test-id locators only; no `waitForTimeout`; web-first assertions.
 - [ ] Independent of other tests and of run order (parallel-safe).
