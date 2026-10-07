@@ -23,6 +23,9 @@ Working on this repo with an AI agent? Start at [AGENTS.md](AGENTS.md).
 ## Prerequisites
 
 - [Node.js](http://nodejs.org/) `>= 24` (`nvm use` picks up `.nvmrc`)
+  - Windows: `nvm-windows` ignores `.nvmrc`, so run `nvm install 26.10.0` and
+    `nvm use 26.10.0`. The npm scripts work in PowerShell, `cmd`, Git Bash and
+    WSL2; Docker Desktop must use Linux containers.
 - [Docker](https://www.docker.com/) with Compose v2
 - [AWS CLI](https://aws.amazon.com/cli/) — for poking floci (local AWS) resources
 - [awslocal](https://github.com/localstack/awscli-local) (optional) — preconfigured AWS CLI wrapper
