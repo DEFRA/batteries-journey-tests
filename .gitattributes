@@ -1,3 +1,38 @@
-# Keep LF everywhere so shell scripts run in Linux containers when
-# checked out on Windows (core.autocrlf would otherwise convert them).
+# Default: treat files as text, store and checkout LF.
+# This matches .editorconfig and keeps Docker/Linux scripts working when the
+# repo is cloned on Windows (core.autocrlf=true would otherwise check out CRLF).
 * text=auto eol=lf
+
+# Shell scripts must always be LF. BusyBox/Alpine (used by Floci) treats a
+# trailing CR as part of the command, which produces ": not found" errors.
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Git hooks are shell scripts with no extension
+.husky/* text eol=lf
+
+# Docker-related files. CRLF in env files would also include \r in values.
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.env text eol=lf
+
+# Windows-native scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.jar binary
