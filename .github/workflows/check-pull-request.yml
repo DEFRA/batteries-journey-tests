@@ -1,15 +1,21 @@
 name: Check Pull Request
 
 on:
+  # No `branches` filter: `pull_request` filters on the base branch, so listing
+  # only `main` skips stacked PRs (feature → feature). `edited` covers a base
+  # change, which GitHub does not send as `synchronize`.
   pull_request:
-    branches:
-      - main
     types:
       - opened
       - edited
       - reopened
       - synchronize
       - ready_for_review
+  # Manual run from the Actions tab (pick the branch). The button only appears
+  # once this trigger is on the default branch. A run checks out that branch's
+  # tip, so the checks show on a PR whose head is that commit. A manual run has
+  # no pull request body, so Depends-On lines are not read.
+  workflow_dispatch:
 
 jobs:
   cdp-workflows:
