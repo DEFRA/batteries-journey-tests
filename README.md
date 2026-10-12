@@ -22,7 +22,7 @@ Working on this repo with an AI agent? Start at [AGENTS.md](AGENTS.md).
 
 ## Prerequisites
 
-- [Node.js](http://nodejs.org/) `>= 24` (`nvm use` picks up `.nvmrc`)
+- [Node.js](http://nodejs.org/) 26.10.0, pinned in [`.nvmrc`](./.nvmrc). `package.json` requires Node.js 26 or newer (`nvm use` picks up `.nvmrc`)
   - Windows: `nvm-windows` ignores `.nvmrc`, so run `nvm install 26.10.0` and
     `nvm use 26.10.0`. The npm scripts work in PowerShell, `cmd`, Git Bash and
     WSL2; Docker Desktop must use Linux containers.

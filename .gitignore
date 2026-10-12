@@ -1,6 +1,9 @@
 .DS_Store
+Thumbs.db
+Desktop.ini
 .npm/
 .vscode
+.vs
 .idea
 .server
 node_modules
