@@ -2,7 +2,7 @@ name: Run Batteries Journey Tests
 description: End-to-end regression tests for Batteries EPR, run against the Docker Compose stack
 
 # Usage from a service repo (e.g. after building and pushing a new image):
-#   - uses: DEFRA/batteries-journey-tests@main
+#   - uses: DEFRA/waste-batteries-journey-tests@main
 #     with:
 #       waste-batteries-reg-frontend-tag: ${{ steps.version.outputs.tag }}
 #

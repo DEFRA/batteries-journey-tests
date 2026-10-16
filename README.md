@@ -1,4 +1,4 @@
-# batteries-journey-tests
+# waste-batteries-journey-tests
 
 Regression E2E suite for **Batteries EPR**, validating UI components and user
 journeys across the registration, submissions and obligations services. Built
@@ -154,7 +154,7 @@ action.yml             # composite action for running this suite from other repo
 ## Docker Compose stack
 
 [`compose.yml`](compose.yml) runs everything on one network
-(`batteries-journey-tests`), so services resolve each other by name:
+(`waste-batteries-journey-tests`), so services resolve each other by name:
 
 | Service                           | Host port | Notes                                         |
 | --------------------------------- | --------- | --------------------------------------------- |
@@ -215,11 +215,11 @@ pass/fail and a link to the report.
 To build and run the image yourself (against the Compose stack):
 
 ```bash
-docker build -t batteries-journey-tests .
-docker run --rm --network batteries-journey-tests_batteries-journey-tests \
+docker build -t waste-batteries-journey-tests .
+docker run --rm --network waste-batteries-journey-tests_waste-batteries-journey-tests \
   -e RUN_MODE=github \
   -e REGISTRATION_FRONTEND_URL=http://waste-batteries-reg-frontend:3000 \
-  batteries-journey-tests
+  waste-batteries-journey-tests
 ```
 
 (Without `RESULTS_OUTPUT_S3_PATH` the publish step reports that it is unset.)
@@ -251,7 +251,7 @@ A chosen branch is checked out and built on the runner; the log of the
 composite action:
 
 ```yaml
-- uses: DEFRA/batteries-journey-tests@main
+- uses: DEFRA/waste-batteries-journey-tests@main
   with:
     waste-batteries-reg-frontend-tag: ${{ steps.version.outputs.tag }}
 ```

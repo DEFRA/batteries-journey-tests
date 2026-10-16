@@ -1,4 +1,4 @@
-# AGENTS.md — batteries-journey-tests
+# AGENTS.md — waste-batteries-journey-tests
 
 Read this file first, every session. It is the single source of truth for how
 this repo works. Everything else is referenced from here:

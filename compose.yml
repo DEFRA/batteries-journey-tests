@@ -15,7 +15,7 @@
 #
 # floci init scripts in docker/scripts/floci pre-populate AWS resources.
 # Per-service env config is in docker/config/.
-# Every service is on the batteries-journey-tests network and resolves the
+# Every service is on the waste-batteries-journey-tests network and resolves the
 # others by service name.
 #
 # Run against published DockerHub images:
@@ -32,7 +32,7 @@
 #   docker compose --profile playwright run --rm playwright
 ################################################################################
 networks:
-  batteries-journey-tests:
+  waste-batteries-journey-tests:
     driver: bridge
 
 x-frontend-healthcheck: &frontend-healthcheck
@@ -52,7 +52,7 @@ services:
   mongodb:
     image: mongo:7.0.28
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     volumes:
       - ./docker/scripts/mongodb:/docker-entrypoint-initdb.d:ro
     healthcheck:
@@ -65,7 +65,7 @@ services:
   redis:
     image: redis:7.2.3-alpine3.18
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     healthcheck:
       test: ['CMD', 'redis-cli', 'PING']
       interval: 5s
@@ -76,7 +76,7 @@ services:
   floci:
     image: hectorvent/floci:latest-aws
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
     environment:
@@ -96,7 +96,7 @@ services:
   cdp-defra-id-stub:
     image: defradigital/cdp-defra-id-stub:${CDP_DEFRA_ID_STUB_TAG:-0.36.0}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
     environment:
@@ -130,7 +130,7 @@ services:
     image: defradigital/cdp-uploader:${CDP_UPLOADER_TAG:-1.27.0}
     platform: linux/amd64
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
     environment:
@@ -157,7 +157,7 @@ services:
   waste-batteries-reg-backend:
     image: defradigital/waste-batteries-reg-backend:${WASTE_BATTERIES_REG_BACKEND_TAG:-latest}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-reg-backend.env
@@ -172,7 +172,7 @@ services:
   waste-batteries-submit-backend:
     image: defradigital/waste-batteries-submit-backend:${WASTE_BATTERIES_SUBMIT_BACKEND_TAG:-latest}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-submit-backend.env
@@ -187,7 +187,7 @@ services:
   waste-batteries-obligations-be:
     image: defradigital/waste-batteries-obligations-be:${WASTE_BATTERIES_OBLIGATIONS_BE_TAG:-latest}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-obligations-be.env
@@ -202,7 +202,7 @@ services:
   waste-batteries-reg-frontend:
     image: defradigital/waste-batteries-reg-frontend:${WASTE_BATTERIES_REG_FRONTEND_TAG:-latest}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-reg-frontend.env
@@ -221,7 +221,7 @@ services:
   waste-batteries-submit-frontend:
     image: defradigital/waste-batteries-submit-frontend:${WASTE_BATTERIES_SUBMIT_FRONTEND_TAG:-latest}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-submit-frontend.env
@@ -240,7 +240,7 @@ services:
   waste-batteries-obligations-fe:
     image: defradigital/waste-batteries-obligations-fe:${WASTE_BATTERIES_OBLIGATIONS_FE_TAG:-latest}
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-obligations-fe.env
@@ -265,7 +265,7 @@ services:
     profiles:
       - playwright
     networks:
-      - batteries-journey-tests
+      - waste-batteries-journey-tests
     working_dir: /app
     volumes:
       - ./:/app
@@ -295,7 +295,7 @@ services:
 #  example-frontend:
 #    image: defradigital/example-frontend:${EXAMPLE_FRONTEND_TAG:-latest}
 #    networks:
-#      - batteries-journey-tests
+#      - waste-batteries-journey-tests
 #    env_file:
 #      - ./docker/config/defaults.env
 #      - ./docker/config/example-frontend.env
@@ -312,7 +312,7 @@ services:
 #  example-backend:
 #    image: defradigital/example-backend:${EXAMPLE_BACKEND_TAG:-latest}
 #    networks:
-#      - batteries-journey-tests
+#      - waste-batteries-journey-tests
 #    env_file:
 #      - ./docker/config/defaults.env
 #      - ./docker/config/example-backend.env

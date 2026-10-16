@@ -1,9 +1,9 @@
 name: Run Batteries Journey Tests (run-journey-tests path)
-description: Delegates to the root action.yml of DEFRA/batteries-journey-tests
+description: Delegates to the root action.yml of DEFRA/waste-batteries-journey-tests
 
 # Kept because the CDP template points service repos at
-#   uses: DEFRA/batteries-journey-tests/run-journey-tests@main
-# Prefer `uses: DEFRA/batteries-journey-tests@main`. Keep inputs in sync with
+#   uses: DEFRA/waste-batteries-journey-tests/run-journey-tests@main
+# Prefer `uses: DEFRA/waste-batteries-journey-tests@main`. Keep inputs in sync with
 # the root action.yml.
 
 inputs:
@@ -35,7 +35,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: DEFRA/batteries-journey-tests@main
+    - uses: DEFRA/waste-batteries-journey-tests@main
       with:
         waste-batteries-reg-frontend-tag: ${{ inputs.waste-batteries-reg-frontend-tag }}
         waste-batteries-submit-frontend-tag: ${{ inputs.waste-batteries-submit-frontend-tag }}

@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       journey-tests-branch:
-        description: Branch of batteries-journey-tests (blank = the branch this run was started from)
+        description: Branch of waste-batteries-journey-tests (blank = the branch this run was started from)
         required: false
         default: ''
       waste-batteries-reg-frontend-branch:
@@ -132,11 +132,11 @@ jobs:
       # Pinned to this repo so the workflow also works when called from a
       # service repo (a bare checkout would check out the caller). Inside this
       # repo github.ref is the run's own ref, so PRs test their own changes.
-      - name: Check out batteries-journey-tests
+      - name: Check out waste-batteries-journey-tests
         uses: actions/checkout@v4
         with:
-          repository: DEFRA/batteries-journey-tests
-          ref: ${{ inputs.journey-tests-branch || (github.repository == 'DEFRA/batteries-journey-tests' && github.ref) || 'main' }}
+          repository: DEFRA/waste-batteries-journey-tests
+          ref: ${{ inputs.journey-tests-branch || (github.repository == 'DEFRA/waste-batteries-journey-tests' && github.ref) || 'main' }}
 
       - name: Resolve service branches
         id: resolve
@@ -156,7 +156,7 @@ jobs:
           WASTE_BATTERIES_SUBMIT_BACKEND_TAG: ${{ inputs.waste-batteries-submit-backend-tag }}
           WASTE_BATTERIES_OBLIGATIONS_BE_TAG: ${{ inputs.waste-batteries-obligations-be-tag }}
         run: |
-          echo "batteries-journey-tests: $JOURNEY_TESTS_REF @ $(git rev-parse --short HEAD)"
+          echo "waste-batteries-journey-tests: $JOURNEY_TESTS_REF @ $(git rev-parse --short HEAD)"
           node .github/scripts/resolve-service-branches.js
 
       - name: Check out waste-batteries-reg-frontend
