@@ -10,13 +10,12 @@ import {
 const oneMinute = 60 * 1000
 
 export default defineConfig({
-  // UI specs live in tests/specs, API specs in tests/api.
-  testDir: './tests',
+  testDir: './tests/specs',
   // Keeps the existing *.e2e.js spec naming convention.
   testMatch: '**/*.e2e.js',
   // API tests target a deployed CDP environment (DEV/TEST), so the GitHub
   // pipeline, which runs against the Compose stack, leaves them out.
-  testIgnore: runMode === 'github' ? '**/api/**' : undefined,
+  testIgnore: runMode === 'github' ? '**/specs/api/**' : undefined,
 
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

@@ -167,7 +167,7 @@ class SignInFlow {
 export { SignInFlow }
 ```
 
-### Spec — `tests/specs/<frontend>/<area>.e2e.js`
+### Spec — `tests/specs/ui/<frontend>/<area>.e2e.js`
 
 (`/example` needs a signed-in user, so this spec stays `[BLOCKED]` until sign-in
 is wired up — it shows the shape, not a test to add today.)
@@ -197,7 +197,7 @@ test.describe('Example page', () => {
 | ------------- | ---------------------------------------------------------- |
 | `@smoke`      | Fast check that each deployed service is up and serving UI |
 | `@regression` | Full journey coverage                                      |
-| `@ui`         | Every browser test under `tests/specs`                     |
-| `@api`        | Every API test under `tests/api`                           |
+| `@ui`         | Every browser test under `tests/specs/ui`                  |
+| `@api`        | Every API test under `tests/specs/api`                     |
 
 Select them with `PROFILE` (e.g. `PROFILE=@smoke`). Add new tags to this table.

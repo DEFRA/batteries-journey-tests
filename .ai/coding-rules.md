@@ -18,13 +18,13 @@ Rules for all code under `tests/`. Structure and workflow are in
 
 ## Naming
 
-| Thing       | Location                  | File                | Export                     |
-| ----------- | ------------------------- | ------------------- | -------------------------- |
-| Spec        | `tests/specs/<frontend>/` | `<area>.e2e.js`     | —                          |
-| Page Object | `tests/pages/`            | `<page>.page.js`    | `class <Page>Page`         |
-| Flow        | `tests/flows/`            | `<journey>.flow.js` | `class <Journey>Flow`      |
-| Fixture     | `tests/fixtures/index.js` | —                   | camelCase, e.g. `homePage` |
-| Helper      | `tests/utils/`            | `<topic>.js`        | named functions/consts     |
+| Thing       | Location                                                     | File                | Export                     |
+| ----------- | ------------------------------------------------------------ | ------------------- | -------------------------- |
+| Spec        | `tests/specs/ui/<frontend>/` or `tests/specs/api/<service>/` | `<area>.e2e.js`     | —                          |
+| Page Object | `tests/pages/`                                               | `<page>.page.js`    | `class <Page>Page`         |
+| Flow        | `tests/flows/`                                               | `<journey>.flow.js` | `class <Journey>Flow`      |
+| Fixture     | `tests/fixtures/index.js`                                    | —                   | camelCase, e.g. `homePage` |
+| Helper      | `tests/utils/`                                               | `<topic>.js`        | named functions/consts     |
 
 Test titles describe observable behaviour: `'Should show the Home page'`, not
 `'test home'`.
