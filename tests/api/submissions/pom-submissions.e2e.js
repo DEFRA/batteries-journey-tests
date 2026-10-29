@@ -27,6 +27,13 @@ test.describe('POST /pom-submissions', () => {
         ]
       }
 
+      // Attached to the report (not logged: no-console). The bearer token is not.
+      const requestText = JSON.stringify(submission, null, 2)
+      await test.info().attach('request body', {
+        body: requestText,
+        contentType: 'application/json'
+      })
+
       const response = await request.post(
         `${backendUrls.submissions}/pom-submissions`,
         {
@@ -38,9 +45,16 @@ test.describe('POST /pom-submissions', () => {
         }
       )
 
+      // Attached before asserting, so a failed run still shows what came back.
+      const responseText = await response.text()
+      await test.info().attach(`response body (${response.status()})`, {
+        body: responseText,
+        contentType: response.headers()['content-type'] ?? 'text/plain'
+      })
+
       expect(response.status()).toBe(201)
 
-      const created = await response.json()
+      const created = JSON.parse(responseText)
       expect(response.headers().location).toBe(`/pom-submissions/${created.id}`)
       expect(created).toMatchObject({
         id: expect.stringMatching(/^[0-9a-f]{24}$/),
