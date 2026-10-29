@@ -197,5 +197,7 @@ test.describe('Example page', () => {
 | ------------- | ---------------------------------------------------------- |
 | `@smoke`      | Fast check that each deployed service is up and serving UI |
 | `@regression` | Full journey coverage                                      |
+| `@ui`         | Every browser test under `tests/specs`                     |
+| `@api`        | Every API test under `tests/api`                           |
 
 Select them with `PROFILE` (e.g. `PROFILE=@smoke`). Add new tags to this table.

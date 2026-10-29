@@ -108,6 +108,8 @@ environments are only reachable from the platform, so this normally runs on the
 ```bash
 BROWSER=firefox npm run test:github     # chromium (default), firefox, webkit
 PROFILE=@smoke npm run test:github      # only tests whose title or tag matches
+npm run test:e2e:ui                   # only browser tests (@ui) against a CDP environment
+npm run test:e2e:api                  # only API tests (@api) against a CDP environment
 npm run test:report                   # reopen the last HTML report
 npm run test:local:debug              # step through with the Playwright Inspector
 npm run lint && npm run format:check

@@ -130,7 +130,8 @@ Full rules: [.ai/coding-rules.md](.ai/coding-rules.md).
 - [ ] Page Object extends `Page` (`tests/pages/page.js`) or an existing Page Object
       gains the new behaviour; registered as a fixture.
 - [ ] Spec in `tests/specs/<frontend>/<area>.e2e.js`, uses fixtures, has no selectors.
-- [ ] Tagged when it belongs to a run profile (`{ tag: '@smoke' }`).
+- [ ] Tagged `@ui` (browser specs) or `@api` (API specs), plus any run profile
+      (`{ tag: ['@smoke', '@ui'] }`).
 - [ ] Role/label/test-id locators only; no `waitForTimeout`; web-first assertions.
 - [ ] Independent of other tests and of run order (parallel-safe).
 - [ ] `npm run test:local` passes against running services, and `npm run test:github`
