@@ -14,6 +14,9 @@ export default defineConfig({
   testDir: './tests',
   // Keeps the existing *.e2e.js spec naming convention.
   testMatch: '**/*.e2e.js',
+  // API tests target a deployed CDP environment (DEV/TEST), so the GitHub
+  // pipeline, which runs against the Compose stack, leaves them out.
+  testIgnore: runMode === 'github' ? '**/api/**' : undefined,
 
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
