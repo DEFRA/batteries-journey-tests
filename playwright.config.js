@@ -10,7 +10,8 @@ import {
 const oneMinute = 60 * 1000
 
 export default defineConfig({
-  testDir: './tests/specs',
+  // UI specs live in tests/specs, API specs in tests/api.
+  testDir: './tests',
   // Keeps the existing *.e2e.js spec naming convention.
   testMatch: '**/*.e2e.js',
 

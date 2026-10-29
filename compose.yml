@@ -10,7 +10,7 @@
 #   - waste-batteries-submit-frontend     3001 → 3000
 #   - waste-batteries-obligations-fe      3002 → 3000
 #   - waste-batteries-reg-backend         (internal) 8085
-#   - waste-batteries-submit-backend      (internal) 8085
+#   - waste-batteries-submit-backend      8085 → 8085 (API tests call it directly)
 #   - waste-batteries-obligations-be      (internal) 8085
 #
 # floci init scripts in docker/scripts/floci pre-populate AWS resources.
@@ -176,6 +176,8 @@ services:
     env_file:
       - ./docker/config/defaults.env
       - ./docker/config/waste-batteries-submit-backend.env
+    ports:
+      - '8085:8085'
     depends_on:
       mongodb:
         condition: service_healthy
@@ -275,6 +277,8 @@ services:
       REGISTRATION_FRONTEND_URL: http://waste-batteries-reg-frontend:3000
       SUBMISSIONS_FRONTEND_URL: http://waste-batteries-submit-frontend:3000
       OBLIGATIONS_FRONTEND_URL: http://waste-batteries-obligations-fe:3000
+      SUBMISSIONS_BACKEND_URL: http://waste-batteries-submit-backend:8085
+      DEFRA_ID_STUB_URL: http://cdp-defra-id-stub:3200
       BROWSER: ${BROWSER:-chromium}
       PROFILE: ${PROFILE:-}
     command: ['sh', '-c', 'npm ci --ignore-scripts && npm run test:github']

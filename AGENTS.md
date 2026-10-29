@@ -60,6 +60,8 @@ source wins and the flow file is updated.
 tests/
   specs/      # test files (*.e2e.js) — orchestration and assertions only;
               # one subfolder per frontend: registration/, submissions/, obligations/
+  api/        # API specs (*.e2e.js) that call a backend directly with a Defra ID
+              # token, using Playwright's `request` — no browser. One subfolder per service
   pages/      # Page Objects (*.page.js) — UI interaction, one class per page
   flows/      # business workflows spanning several pages
   fixtures/   # test.extend() fixtures — inject Page Objects and flows
