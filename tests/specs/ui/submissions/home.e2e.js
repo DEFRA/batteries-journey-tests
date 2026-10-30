@@ -3,7 +3,7 @@ import { test, expect } from '#fixtures/index.js'
 test.describe('Home page', () => {
   test(
     'Should be on the "Home" page',
-    { tag: '@smoke' },
+    { tag: ['@smoke', '@ui'] },
     async ({ page, submissionsHomePage }) => {
       await submissionsHomePage.open()
 

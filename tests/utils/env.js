@@ -57,3 +57,35 @@ export const frontendUrls = {
 export const proxyConfig = process.env.HTTP_PROXY
   ? { server: process.env.HTTP_PROXY }
   : undefined
+
+// Backends are API-only. On the CDP Portal (e2e mode) the suite runs inside CDP
+// and reaches them by service name. From a laptop CDP blocks direct calls, so
+// set CDP_API_KEY (a Developer API key for ENVIRONMENT, from the Portal user
+// profile) to go through the ephemeral gateway instead. Outside e2e,
+// compose.yml publishes the submissions backend on the host
+// (override with SUBMISSIONS_BACKEND_URL).
+const apiKey = runMode === 'e2e' ? process.env.CDP_API_KEY : undefined
+
+export const backendUrls = {
+  submissions: apiKey
+    ? `https://ephemeral-protected.api.${environment}.cdp-int.defra.cloud/waste-batteries-submit-backend`
+    : runMode === 'e2e'
+      ? cdpUrl('waste-batteries-submit-backend')
+      : (process.env.SUBMISSIONS_BACKEND_URL ?? 'http://localhost:8085')
+}
+
+// Extra headers every backend call needs (the gateway's key, when used).
+export const backendHeaders = apiKey ? { 'x-api-key': apiKey } : {}
+
+// Defra ID stub used to mint bearer tokens for API tests. The client id is the
+// audience the backends validate (Jwt__Audience); the secret is the stub's
+// dummy value, overridable with DEFRA_ID_CLIENT_SECRET.
+export const defraId = {
+  url:
+    runMode === 'e2e'
+      ? cdpUrl('cdp-defra-id-stub')
+      : (process.env.DEFRA_ID_STUB_URL ?? 'http://localhost:3200'),
+  clientId: '63983fc2-cfff-45bb-8ec2-959e21062b9a',
+  clientSecret: process.env.DEFRA_ID_CLIENT_SECRET ?? 'test_value',
+  user: process.env.DEFRA_ID_USER ?? 'front-end-tests@example.com'
+}
