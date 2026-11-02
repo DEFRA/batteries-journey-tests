@@ -117,25 +117,25 @@ npm run lint && npm run format:check
 
 ## Environment variables
 
-| Variable                    | Default                          | Purpose                                                                       |
-| --------------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
-| `RUN_MODE`                  | `local`                          | `local`, `github` or `e2e` (set by the npm scripts)                           |
-| `ENVIRONMENT`               | `dev`                            | CDP environment for `e2e` mode                                                |
-| `BROWSER`                   | `chromium`                       | `chromium`, `firefox` or `webkit`                                             |
-| `HEADED`                    | `false` (`true` in `test:local`) | Show the browser                                                              |
-| `PROFILE`                   | —                                | Filter tests by title or `@tag` (regex), e.g. `@smoke`                        |
-| `REGISTRATION_FRONTEND_URL` | `http://localhost:3000`          | Registration frontend (ignored in `e2e` mode)                                 |
-| `SUBMISSIONS_FRONTEND_URL`  | `http://localhost:3001`          | Submissions frontend (ignored in `e2e` mode)                                  |
-| `OBLIGATIONS_FRONTEND_URL`  | `http://localhost:3002`          | Obligations frontend (ignored in `e2e` mode)                                  |
-| `CDP_API_KEY`               | —                                | `e2e` mode from a laptop: Developer API key, routes API tests via the gateway |
-| `SUBMISSIONS_BACKEND_URL`   | `http://localhost:8085`          | Submissions backend for API tests (ignored in `e2e` mode)                     |
-| `DEFRA_ID_STUB_URL`         | `http://localhost:3200`          | Defra ID stub that issues API test tokens (ignored in `e2e` mode)             |
-| `DEFRA_ID_USER`             | `front-end-tests@example.com`    | Stub user the API tests sign in as                                            |
-| `DEFRA_ID_CLIENT_SECRET`    | `test_value`                     | Stub client secret (the stub's dummy value)                                   |
-| `HTTP_PROXY`                | —                                | Egress proxy; set by the CDP Portal                                           |
-| `CI`                        | —                                | Set by `test:github`: one worker, one retry, `test.only` forbidden            |
-| `<SERVICE>_TAG`             | `latest`                         | Compose image tag per service, e.g. `WASTE_BATTERIES_REG_FRONTEND_TAG`        |
-| `<SERVICE>_PATH`            | `../<service>`                   | Source location for `compose.build.yml`                                       |
+| Variable                    | Default                                   | Purpose                                                                       |
+| --------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
+| `RUN_MODE`                  | `local`                                   | `local`, `github` or `e2e` (set by the npm scripts)                           |
+| `ENVIRONMENT`               | `dev`                                     | CDP environment for `e2e` mode                                                |
+| `BROWSER`                   | `chromium`                                | `chromium`, `firefox` or `webkit`                                             |
+| `HEADED`                    | `false` (`true` in `test:local`)          | Show the browser                                                              |
+| `PROFILE`                   | —                                         | Filter tests by title or `@tag` (regex), e.g. `@smoke`                        |
+| `REGISTRATION_FRONTEND_URL` | `http://localhost:3000`                   | Registration frontend (ignored in `e2e` mode)                                 |
+| `SUBMISSIONS_FRONTEND_URL`  | `http://localhost:3001`                   | Submissions frontend (ignored in `e2e` mode)                                  |
+| `OBLIGATIONS_FRONTEND_URL`  | `http://localhost:3002`                   | Obligations frontend (ignored in `e2e` mode)                                  |
+| `CDP_API_KEY`               | —                                         | `e2e` mode from a laptop: Developer API key, routes API tests via the gateway |
+| `SUBMISSIONS_BACKEND_URL`   | `http://localhost:8085`                   | Submissions backend for API tests (ignored in `e2e` mode)                     |
+| `DEFRA_ID_STUB_URL`         | `http://localhost:3200`                   | Defra ID stub that issues API test tokens (ignored in `e2e` mode)             |
+| `DEFRA_ID_USER`             | `batteries-journey-autotests@example.com` | Stub user the API tests sign in as                                            |
+| `DEFRA_ID_CLIENT_SECRET`    | `test_value`                              | Stub client secret (the stub's dummy value)                                   |
+| `HTTP_PROXY`                | —                                         | Egress proxy; set by the CDP Portal                                           |
+| `CI`                        | —                                         | Set by `test:github`: one worker, one retry, `test.only` forbidden            |
+| `<SERVICE>_TAG`             | `latest`                                  | Compose image tag per service, e.g. `WASTE_BATTERIES_REG_FRONTEND_TAG`        |
+| `<SERVICE>_PATH`            | `../<service>`                            | Source location for `compose.build.yml`                                       |
 
 ## Folder structure
 
