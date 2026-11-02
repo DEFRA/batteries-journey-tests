@@ -87,5 +87,5 @@ export const defraId = {
       : (process.env.DEFRA_ID_STUB_URL ?? 'http://localhost:3200'),
   clientId: '63983fc2-cfff-45bb-8ec2-959e21062b9a',
   clientSecret: process.env.DEFRA_ID_CLIENT_SECRET ?? 'test_value',
-  user: process.env.DEFRA_ID_USER ?? 'front-end-tests@example.com'
+  user: process.env.DEFRA_ID_USER ?? 'batteries-journey-autotests@example.com'
 }
