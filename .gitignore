@@ -23,3 +23,6 @@ test-results/
 # CI: service checkouts and compose logs (journey-tests workflow)
 services/
 compose-logs.txt
+
+# Defra ID tokens written by npm run token
+*-token.txt

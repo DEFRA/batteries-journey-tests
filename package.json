@@ -13,6 +13,7 @@
     "#utils/*": "./tests/utils/*"
   },
   "scripts": {
+    "token": "node scripts/defra-id-token.js",
     "clean": "node -e \"for (const d of ['playwright-report', 'test-results']) require('fs').rmSync(d, { recursive: true, force: true })\"",
     "test": "npm run test:e2e",
     "test:local": "cross-env RUN_MODE=local HEADED=true playwright test",
