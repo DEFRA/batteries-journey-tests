@@ -133,7 +133,7 @@ const allQuarters = (year) =>
 test.describe('GET /pom-submissions: years look-back', () => {
   test(
     'Should return only the requested three years',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -157,7 +157,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 
   test(
     'Should return only the years that have data when the window partly overlaps',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -176,7 +176,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 
   test(
     'Should return an empty list when no requested year has data',
-    { tag: '@api' },
+    { tag: ['@happy-path', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -195,7 +195,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 
   test(
     'Should return a single year',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -236,7 +236,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 test.describe('GET /pom-submissions: quarters', () => {
   test(
     'Should return the four quarters as individual submissions with no pre-summed total',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(
@@ -264,7 +264,7 @@ test.describe('GET /pom-submissions: quarters', () => {
 
   test(
     'Should filter by quarters',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(
@@ -286,7 +286,7 @@ test.describe('GET /pom-submissions: quarters', () => {
 
   test(
     'Should combine years and quarters as AND',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
@@ -336,7 +336,7 @@ test.describe('GET /pom-submissions: quarters', () => {
 test.describe('GET /pom-submissions: data returned', () => {
   test(
     'Should return the tonnage entries and values that were posted',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
@@ -420,7 +420,7 @@ test.describe('GET /pom-submissions: data returned', () => {
 test.describe('GET /pom-submissions/{id}', () => {
   test(
     'Should return a submission by id',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const [created] = await seed(
         request,
@@ -484,7 +484,7 @@ test.describe('GET /pom-submissions/{id}', () => {
 test.describe('GET /pom-submissions: filters', () => {
   test(
     'Should list by schemeOrgId only',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -502,7 +502,7 @@ test.describe('GET /pom-submissions: filters', () => {
 
   test(
     'Should list by memberOrgId only',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const memberOrgId = objectId()
       await seed(request, accessToken, objectId(), memberOrgId, [
@@ -521,7 +521,7 @@ test.describe('GET /pom-submissions: filters', () => {
 
   test(
     'Should combine scheme, member, year and quarter as AND',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
@@ -601,7 +601,7 @@ test.describe('GET /pom-submissions: filters', () => {
 
   test(
     'Should default isCurrent to true',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -755,7 +755,7 @@ test.describe('GET /pom-submissions: paging', () => {
 
   test(
     'Should return the first page with its flags',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), fivePeriods)
@@ -812,7 +812,7 @@ test.describe('GET /pom-submissions: paging', () => {
   // consumer must stop on hasNextPage and never wait for an empty page.
   test(
     'Should move a page past the end back to the last page',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), fivePeriods)
@@ -836,7 +836,7 @@ test.describe('GET /pom-submissions: paging', () => {
 
   test(
     'Should return every submission once, in a stable order, when paging through',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const created = await seed(
