@@ -1031,80 +1031,134 @@ test.describe('GET /pom-submissions: authentication', () => {
   )
 })
 
-// BLOCKED: amendments. The backend has no amend endpoint yet, so a superseded
-// version can only be made by editing Mongo by hand, which an e2e run cannot
-// do. The structure of those tests is kept here, switched off, so they can be
-// filled in once the endpoint exists:
-//   1. Replace `amend` with a call to the real endpoint.
-//   2. Set `amendEndpointReady` to true (or delete the guard).
-//   3. Replace each TODO with the request and assertions it describes.
-// Scenarios in eb233-test-sceanrios.md: 19, 31, 32, 33.
-const amendEndpointReady = false
-
-// TODO: call the amend endpoint for `submission` and return the new version.
-async function amend() {
-  throw new Error('The amend endpoint is not available yet')
-}
-
-/* eslint-disable playwright/expect-expect -- skeleton: assertions are added with the amend endpoint */
-if (amendEndpointReady) {
-  test.describe('Amended submissions', () => {
-    test(
-      'Should still return a superseded submission by id',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend it to v2, then GET /pom-submissions/{v1.id}.
-        // Expect 200, isCurrent false, version 1.
-        const [v1] = await seed(request, accessToken, objectId(), objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-      }
-    )
-
-    test(
-      'Should return only the superseded versions for isCurrent=false',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend to v2, list the scheme with isCurrent=false.
-        // Expect only v1 (isCurrent false); v2 is absent.
-        const schemeOrgId = objectId()
-        const [v1] = await seed(request, accessToken, schemeOrgId, objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-        await list(request, accessToken, { schemeOrgId, isCurrent: false })
-      }
-    )
-
-    test(
-      'Should return only the current version for isCurrent=true and by default',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend to v2, list the scheme with isCurrent=true and
-        // with no isCurrent. Expect only v2 in both, and the two bodies equal.
-        const schemeOrgId = objectId()
-        const [v1] = await seed(request, accessToken, schemeOrgId, objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-        await list(request, accessToken, { schemeOrgId, isCurrent: true })
-        await list(request, accessToken, { schemeOrgId })
-      }
-    )
-
-    test(
-      'Should link the new version to the old one after an amendment',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend to v2. Expect v1.isCurrent false, v2.isCurrent
-        // true, v2.version 2 and v2.supersedesSubmissionId equal to v1.id.
-        const [v1] = await seed(request, accessToken, objectId(), objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-      }
-    )
+// Amends a submission with PATCH /pom-submissions, which replaces the current
+// submission for the same scheme, member, year and quarter. The new version
+// carries different tonnage so it can be told apart from the one it replaces.
+// Returns the new version (version + 1, supersedesSubmissionId = previous id).
+async function amend(request, accessToken, previous) {
+  const response = await request.patch(base, {
+    headers: authHeaders(accessToken),
+    data: {
+      ...submissionFor({
+        schemeOrgId: previous.schemeOrgId,
+        memberOrgId: previous.memberOrgId,
+        year: previous.compliancePeriodYear,
+        quarter: previous.compliancePeriodQuarter
+      }),
+      tonnageEntries: [
+        { classification: { chemistry: 'Alkaline' }, tonnes: '99.000' }
+      ]
+    }
   })
+  expect(response.status(), 'amend').toBe(200)
+  return response.json()
 }
-/* eslint-enable playwright/expect-expect */
+
+// Seeds one 2026 Q1 submission and amends it, so v1 is superseded and v2 is
+// current.
+async function seedAmended(request, accessToken) {
+  const schemeOrgId = objectId()
+  const [v1] = await seed(request, accessToken, schemeOrgId, objectId(), [
+    { year: 2026, quarter: 'Q1' }
+  ])
+  const v2 = await amend(request, accessToken, v1)
+  return { schemeOrgId, v1, v2 }
+}
+
+test.describe('Amended submissions', () => {
+  test(
+    'Should still return a superseded submission by id',
+    { tag: ['@amend', '@api'] },
+    async ({ request, accessToken }) => {
+      const { v1 } = await seedAmended(request, accessToken)
+
+      const response = await request.get(`${base}/${v1.id}`, {
+        headers: authHeaders(accessToken)
+      })
+
+      expect(response.status()).toBe(200)
+      const fetched = await response.json()
+      expect(fetched).toMatchObject({
+        id: v1.id,
+        version: 1,
+        isCurrent: false,
+        supersedesSubmissionId: null
+      })
+      expect(fetched.updatedAtUtc).toMatch(utcTimestamp)
+    }
+  )
+
+  test(
+    'Should return only the superseded version for isCurrent=false',
+    { tag: ['@amend', '@api'] },
+    async ({ request, accessToken }) => {
+      const { schemeOrgId, v1 } = await seedAmended(request, accessToken)
+
+      const { body } = await list(request, accessToken, {
+        schemeOrgId,
+        isCurrent: false
+      })
+
+      expect(body.items.map((item) => item.id)).toEqual([v1.id])
+      expect(body.items[0].isCurrent).toBe(false)
+    }
+  )
+
+  test(
+    'Should return only the current version for isCurrent=true and by default',
+    { tag: ['@amend', '@api'] },
+    async ({ request, accessToken }) => {
+      const { schemeOrgId, v2 } = await seedAmended(request, accessToken)
+
+      const explicit = await list(request, accessToken, {
+        schemeOrgId,
+        isCurrent: true
+      })
+      const byDefault = await list(request, accessToken, { schemeOrgId })
+
+      expect(explicit.body.items.map((item) => item.id)).toEqual([v2.id])
+      expect(byDefault.body).toEqual(explicit.body)
+      expect(explicit.body.items[0].tonnageEntries[0].tonnes).toBe('99.000')
+    }
+  )
+
+  test(
+    'Should link the new version to the old one after an amendment',
+    { tag: ['@amend', '@api'] },
+    async ({ request, accessToken }) => {
+      const { v1, v2 } = await seedAmended(request, accessToken)
+
+      expect(v2).toMatchObject({
+        version: 2,
+        isCurrent: true,
+        supersedesSubmissionId: v1.id
+      })
+      expect(v2.id).not.toBe(v1.id)
+
+      const old = await request.get(`${base}/${v1.id}`, {
+        headers: authHeaders(accessToken)
+      })
+      expect(await old.json()).toMatchObject({ isCurrent: false })
+    }
+  )
+
+  test(
+    'Should return both versions when listing without the isCurrent default',
+    { tag: ['@amend', '@api'] },
+    async ({ request, accessToken }) => {
+      const { schemeOrgId, v1, v2 } = await seedAmended(request, accessToken)
+
+      const current = await list(request, accessToken, { schemeOrgId })
+      const superseded = await list(request, accessToken, {
+        schemeOrgId,
+        isCurrent: false
+      })
+
+      expect(
+        [...current.body.items, ...superseded.body.items]
+          .map((item) => item.id)
+          .sort()
+      ).toEqual([v1.id, v2.id].sort())
+    }
+  )
+})
