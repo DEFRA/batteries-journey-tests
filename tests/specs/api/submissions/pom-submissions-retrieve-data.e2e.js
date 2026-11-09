@@ -133,7 +133,7 @@ const allQuarters = (year) =>
 test.describe('GET /pom-submissions: years look-back', () => {
   test(
     'Should return only the requested three years',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -157,7 +157,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 
   test(
     'Should return only the years that have data when the window partly overlaps',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -176,7 +176,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 
   test(
     'Should return an empty list when no requested year has data',
-    { tag: '@api' },
+    { tag: ['@happy-path', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -195,7 +195,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 
   test(
     'Should return a single year',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -236,7 +236,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
 test.describe('GET /pom-submissions: quarters', () => {
   test(
     'Should return the four quarters as individual submissions with no pre-summed total',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(
@@ -264,7 +264,7 @@ test.describe('GET /pom-submissions: quarters', () => {
 
   test(
     'Should filter by quarters',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(
@@ -286,7 +286,7 @@ test.describe('GET /pom-submissions: quarters', () => {
 
   test(
     'Should combine years and quarters as AND',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
@@ -336,7 +336,7 @@ test.describe('GET /pom-submissions: quarters', () => {
 test.describe('GET /pom-submissions: data returned', () => {
   test(
     'Should return the tonnage entries and values that were posted',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
@@ -420,7 +420,7 @@ test.describe('GET /pom-submissions: data returned', () => {
 test.describe('GET /pom-submissions/{id}', () => {
   test(
     'Should return a submission by id',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const [created] = await seed(
         request,
@@ -484,7 +484,7 @@ test.describe('GET /pom-submissions/{id}', () => {
 test.describe('GET /pom-submissions: filters', () => {
   test(
     'Should list by schemeOrgId only',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -502,7 +502,7 @@ test.describe('GET /pom-submissions: filters', () => {
 
   test(
     'Should list by memberOrgId only',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const memberOrgId = objectId()
       await seed(request, accessToken, objectId(), memberOrgId, [
@@ -521,7 +521,7 @@ test.describe('GET /pom-submissions: filters', () => {
 
   test(
     'Should combine scheme, member, year and quarter as AND',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
@@ -601,7 +601,7 @@ test.describe('GET /pom-submissions: filters', () => {
 
   test(
     'Should default isCurrent to true',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
@@ -755,7 +755,7 @@ test.describe('GET /pom-submissions: paging', () => {
 
   test(
     'Should return the first page with its flags',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), fivePeriods)
@@ -812,7 +812,7 @@ test.describe('GET /pom-submissions: paging', () => {
   // consumer must stop on hasNextPage and never wait for an empty page.
   test(
     'Should move a page past the end back to the last page',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), fivePeriods)
@@ -836,7 +836,7 @@ test.describe('GET /pom-submissions: paging', () => {
 
   test(
     'Should return every submission once, in a stable order, when paging through',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const created = await seed(
@@ -1030,81 +1030,3 @@ test.describe('GET /pom-submissions: authentication', () => {
     }
   )
 })
-
-// BLOCKED: amendments. The backend has no amend endpoint yet, so a superseded
-// version can only be made by editing Mongo by hand, which an e2e run cannot
-// do. The structure of those tests is kept here, switched off, so they can be
-// filled in once the endpoint exists:
-//   1. Replace `amend` with a call to the real endpoint.
-//   2. Set `amendEndpointReady` to true (or delete the guard).
-//   3. Replace each TODO with the request and assertions it describes.
-// Scenarios in eb233-test-sceanrios.md: 19, 31, 32, 33.
-const amendEndpointReady = false
-
-// TODO: call the amend endpoint for `submission` and return the new version.
-async function amend() {
-  throw new Error('The amend endpoint is not available yet')
-}
-
-/* eslint-disable playwright/expect-expect -- skeleton: assertions are added with the amend endpoint */
-if (amendEndpointReady) {
-  test.describe('Amended submissions', () => {
-    test(
-      'Should still return a superseded submission by id',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend it to v2, then GET /pom-submissions/{v1.id}.
-        // Expect 200, isCurrent false, version 1.
-        const [v1] = await seed(request, accessToken, objectId(), objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-      }
-    )
-
-    test(
-      'Should return only the superseded versions for isCurrent=false',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend to v2, list the scheme with isCurrent=false.
-        // Expect only v1 (isCurrent false); v2 is absent.
-        const schemeOrgId = objectId()
-        const [v1] = await seed(request, accessToken, schemeOrgId, objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-        await list(request, accessToken, { schemeOrgId, isCurrent: false })
-      }
-    )
-
-    test(
-      'Should return only the current version for isCurrent=true and by default',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend to v2, list the scheme with isCurrent=true and
-        // with no isCurrent. Expect only v2 in both, and the two bodies equal.
-        const schemeOrgId = objectId()
-        const [v1] = await seed(request, accessToken, schemeOrgId, objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-        await list(request, accessToken, { schemeOrgId, isCurrent: true })
-        await list(request, accessToken, { schemeOrgId })
-      }
-    )
-
-    test(
-      'Should link the new version to the old one after an amendment',
-      { tag: '@api' },
-      async ({ request, accessToken }) => {
-        // TODO: seed v1, amend to v2. Expect v1.isCurrent false, v2.isCurrent
-        // true, v2.version 2 and v2.supersedesSubmissionId equal to v1.id.
-        const [v1] = await seed(request, accessToken, objectId(), objectId(), [
-          { year: 2026, quarter: 'Q1' }
-        ])
-        await amend(v1)
-      }
-    )
-  })
-}
-/* eslint-enable playwright/expect-expect */
