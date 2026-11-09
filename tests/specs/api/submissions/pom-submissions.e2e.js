@@ -55,7 +55,7 @@ async function postSubmission(request, accessToken, submission) {
 test.describe('POST /pom-submissions', () => {
   test(
     'Should create a first submission for a scheme member and quarter',
-    { tag: '@api' },
+    { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const submission = validSubmission()
       const { response, responseText } = await postSubmission(
