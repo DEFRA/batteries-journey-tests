@@ -1,10 +1,6 @@
-import { randomBytes } from 'node:crypto'
-
 import { test, expect } from '#fixtures/index.js'
 import { backendHeaders, backendUrls } from '#utils/env.js'
-
-// 24 hex characters, the shape of a Mongo ObjectId the backend requires.
-const objectId = () => randomBytes(12).toString('hex')
+import { objectId } from '#utils/pom-submissions.js'
 
 // Unique scheme and member per call: a second submission for the same member
 // and quarter is rejected, so tests never share them.

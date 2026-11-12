@@ -1,91 +1,44 @@
-import { randomBytes } from 'node:crypto'
-
 import { test, expect } from '#fixtures/index.js'
-import { backendHeaders, backendUrls } from '#utils/env.js'
-
-const base = `${backendUrls.submissions}/pom-submissions`
-
-// 24 hex characters, the shape of a Mongo ObjectId the backend requires.
-const objectId = () => randomBytes(12).toString('hex')
+import { backendHeaders } from '#utils/env.js'
+import {
+  authHeaders as sharedAuthHeaders,
+  base,
+  create,
+  getList,
+  objectId,
+  query,
+  viaGateway
+} from '#utils/pom-submissions.js'
 
 const objectIdPattern = /^[0-9a-f]{24}$/
 
-// The ephemeral gateway sends `content-encoding: gzip` with an uncompressed
-// body, which Playwright cannot decode. Ordinary calls therefore ask for an
-// uncompressed response. The tests that need real gzip only run from CDP.
-// True when calls go through the ephemeral gateway (a laptop run with
-// CDP_API_KEY). Inside CDP they go straight to the service.
-const viaGateway = Boolean(backendHeaders['x-api-key'])
-
+// Ordinary calls ask for an uncompressed response, in CDP as well, so the page
+// size cap is the one for callers that do not accept gzip. The tests that need
+// real gzip only run from CDP and set their own Accept-Encoding.
 const authHeaders = (accessToken) => ({
-  ...backendHeaders,
-  'Accept-Encoding': 'identity',
-  Authorization: `Bearer ${accessToken}`
+  ...sharedAuthHeaders(accessToken),
+  'Accept-Encoding': 'identity'
 })
 
-// A submission is unique per scheme, member, year and quarter while current,
-// so every test uses its own scheme and members.
-const submissionFor = ({ schemeOrgId, memberOrgId, year, quarter }) => ({
-  schemeOrgId,
-  memberOrgId,
-  memberName: 'Journey Test Member Ltd',
-  // The BPRN year must equal the compliance year.
-  memberBprn: `BPRN-EA-${year}-000001`,
-  schemeMembershipRef: 'SM-0001',
-  compliancePeriodYear: year,
-  compliancePeriodQuarter: quarter,
-  dataBasis: 'Actual',
-  tonnageEntries: [
-    { classification: { chemistry: 'Alkaline' }, tonnes: '12.500' },
-    { classification: { chemistry: 'Lithium' }, tonnes: '3.250' }
-  ]
-})
+const list = (request, accessToken, params, headers) =>
+  getList(request, accessToken, params, {
+    'Accept-Encoding': 'identity',
+    ...headers
+  })
 
 // Posts one submission per { year, quarter } for a scheme and member, and
 // returns the created submissions in the order given.
-async function seed(request, accessToken, schemeOrgId, memberOrgId, periods) {
-  return Promise.all(
-    periods.map(async ({ year, quarter }) => {
-      const response = await request.post(base, {
-        headers: authHeaders(accessToken),
-        data: submissionFor({ schemeOrgId, memberOrgId, year, quarter })
-      })
-      expect(response.status(), `seed ${year} ${quarter}`).toBe(201)
-      return response.json()
-    })
+const seed = (request, accessToken, schemeOrgId, memberOrgId, periods) =>
+  Promise.all(
+    periods.map(({ year, quarter }) =>
+      create(
+        request,
+        accessToken,
+        { schemeOrgId, memberOrgId },
+        { year, quarter }
+      )
+    )
   )
-}
-
-// Builds a query string. Array values repeat the parameter, which is how the
-// backend reads compliancePeriodYears and compliancePeriodQuarters.
-const query = (params) => {
-  const search = new URLSearchParams()
-  for (const [name, value] of Object.entries(params)) {
-    for (const item of [value].flat()) search.append(name, String(item))
-  }
-  return search.toString()
-}
-
-// Calls the list endpoint and attaches the response to the report before the
-// caller asserts, so a failed run still shows what came back.
-async function list(request, accessToken, params, headers = {}) {
-  const response = await request.get(`${base}?${query(params)}`, {
-    headers: { ...authHeaders(accessToken), ...headers }
-  })
-  const text = await response.text()
-  await test.info().attach(`list response (${response.status()})`, {
-    body: text,
-    contentType: /json/.test(response.headers()['content-type'] ?? '')
-      ? 'application/json'
-      : 'text/plain'
-  })
-  return {
-    response,
-    body: /json/.test(response.headers()['content-type'] ?? '')
-      ? JSON.parse(text)
-      : undefined
-  }
-}
 
 // Mongo stores timestamps to the millisecond, so a created submission differs
 // from a stored one in the sub-millisecond digits. Compare without them; their
@@ -600,7 +553,7 @@ test.describe('GET /pom-submissions: filters', () => {
   )
 
   test(
-    'Should default isCurrent to true',
+    'Should default returnCurrentOnly to true',
     { tag: ['@smoke', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
@@ -611,7 +564,7 @@ test.describe('GET /pom-submissions: filters', () => {
       const withDefault = await list(request, accessToken, { schemeOrgId })
       const explicit = await list(request, accessToken, {
         schemeOrgId,
-        isCurrent: true
+        returnCurrentOnly: true
       })
 
       expect(withDefault.body.items.every((item) => item.isCurrent)).toBe(true)
@@ -637,11 +590,11 @@ test.describe('GET /pom-submissions: validation', () => {
   )
 
   test(
-    'Should not count isCurrent as a filter',
+    'Should not count returnCurrentOnly as a filter',
     { tag: '@api' },
     async ({ request, accessToken }) => {
       const { response, body } = await list(request, accessToken, {
-        isCurrent: true
+        returnCurrentOnly: true
       })
 
       expect(response.status()).toBe(400)
