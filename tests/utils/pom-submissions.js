@@ -9,6 +9,10 @@ import { backendHeaders, backendUrls } from '#utils/env.js'
  * only for what is specific to it.
  */
 
+// The compliance year the tests use. A batch is for one year, so the other
+// years a test needs are written relative to it, such as currentYear - 1.
+export const currentYear = new Date().getFullYear()
+
 export const base = `${backendUrls.submissions}/pom-submissions`
 
 // 24 hex characters, the shape of a Mongo ObjectId the backend requires.
@@ -33,7 +37,7 @@ export const authHeaders = (accessToken) => ({
 export const submissionFor = ({
   schemeOrgId,
   memberOrgId,
-  year = 2026,
+  year = currentYear,
   quarter = 'Q1',
   memberName = 'Journey Test Member Ltd',
   schemeMembershipRef = 'SM-0001',

@@ -1,6 +1,7 @@
 import { test, expect } from '#fixtures/index.js'
 import { backendHeaders } from '#utils/env.js'
 import {
+  currentYear,
   authHeaders,
   base,
   create,
@@ -203,7 +204,7 @@ test.describe('PATCH /pom-submissions: atomic and exclusive', () => {
         const current = await list(request, accessToken, {
           schemeOrgId: key.schemeOrgId,
           memberOrgId: key.memberOrgId,
-          compliancePeriodYears: 2026,
+          compliancePeriodYears: currentYear,
           compliancePeriodQuarters: 'Q1',
           returnCurrentOnly: true
         })
@@ -326,7 +327,7 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
     async ({ request, accessToken }) => {
       const invalid = {
         memberName: '',
-        memberBprn: 'BPRN-XX-2026-1',
+        memberBprn: `BPRN-XX-${currentYear}-1`,
         schemeMembershipRef: '',
         dataBasis: '',
         tonnageEntries: [{ classification: { chemistry: '' }, tonnes: '12.5' }]
@@ -361,7 +362,7 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
       const invalidBodies = {
         'a BPRN year that differs from the compliance year': {
           ...valid,
-          memberBprn: 'BPRN-EA-2025-000001'
+          memberBprn: `BPRN-EA-${currentYear - 1}-000001`
         },
         'no tonnage entries': { ...valid, tonnageEntries: [] },
         'a classification repeated': submissionFor({
@@ -444,12 +445,17 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
     { tag: ['@amend', '@api'] },
     async ({ request, accessToken }) => {
       const { key } = await createdSubmission(request, accessToken, {
-        year: 2021
+        year: currentYear - 5
       })
 
-      const v2 = await amend(request, accessToken, key, { year: 2021 })
+      const v2 = await amend(request, accessToken, key, {
+        year: currentYear - 5
+      })
 
-      expect(v2).toMatchObject({ version: 2, compliancePeriodYear: 2021 })
+      expect(v2).toMatchObject({
+        version: 2,
+        compliancePeriodYear: currentYear - 5
+      })
     }
   )
 
@@ -541,7 +547,9 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
       const otherMember = { ...key, memberOrgId: objectId() }
       const q1 = await create(request, accessToken, key)
       const q2 = await create(request, accessToken, key, { quarter: 'Q2' })
-      const year2025 = await create(request, accessToken, key, { year: 2025 })
+      const previousYear = await create(request, accessToken, key, {
+        year: currentYear - 1
+      })
       const other = await create(request, accessToken, otherMember)
 
       await amend(request, accessToken, key, {
@@ -553,7 +561,7 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
         returnCurrentOnly: true
       })
       const byId = new Map(current.items.map((item) => [item.id, item]))
-      for (const untouched of [q2, year2025, other]) {
+      for (const untouched of [q2, previousYear, other]) {
         expect(byId.get(untouched.id)).toMatchObject({
           version: 1,
           isCurrent: true

@@ -1,6 +1,7 @@
 import { test, expect } from '#fixtures/index.js'
 import { backendHeaders } from '#utils/env.js'
 import {
+  currentYear,
   authHeaders,
   base,
   create,
@@ -39,6 +40,10 @@ async function upserted(request, accessToken, items) {
 // One item. Every test uses its own scheme, and its own members.
 const itemFor = (schemeOrgId, memberOrgId, overrides = {}) =>
   submissionFor({ schemeOrgId, memberOrgId, ...overrides })
+
+// A batch is for one scheme and one compliance year (currentYear), with
+// different members and quarters.
+const quarters = ['Q1', 'Q2', 'Q3', 'Q4']
 
 const membersOf = (count) => Array.from({ length: count }, () => objectId())
 
@@ -88,9 +93,9 @@ test.describe('POST /pom-submissions/upsert-batch: creating', () => {
       const [m0, m1, m2] = membersOf(3)
 
       const results = await upserted(request, accessToken, [
-        itemFor(schemeOrgId, m0, { year: 2026, quarter: 'Q1' }),
-        itemFor(schemeOrgId, m1, { year: 2026, quarter: 'Q2' }),
-        itemFor(schemeOrgId, m2, { year: 2025, quarter: 'Q4' })
+        itemFor(schemeOrgId, m0, { year: currentYear, quarter: 'Q1' }),
+        itemFor(schemeOrgId, m1, { year: currentYear, quarter: 'Q2' }),
+        itemFor(schemeOrgId, m2, { year: currentYear, quarter: 'Q4' })
       ])
 
       expect(results).toHaveLength(3)
@@ -100,7 +105,7 @@ test.describe('POST /pom-submissions/upsert-batch: creating', () => {
           id: expect.stringMatching(objectIdPattern),
           schemeOrgId,
           memberOrgId: m0,
-          compliancePeriodYear: 2026,
+          compliancePeriodYear: currentYear,
           compliancePeriodQuarter: 'Q1',
           action: 'Created'
         },
@@ -109,7 +114,7 @@ test.describe('POST /pom-submissions/upsert-batch: creating', () => {
           id: expect.stringMatching(objectIdPattern),
           schemeOrgId,
           memberOrgId: m1,
-          compliancePeriodYear: 2026,
+          compliancePeriodYear: currentYear,
           compliancePeriodQuarter: 'Q2',
           action: 'Created'
         },
@@ -118,7 +123,7 @@ test.describe('POST /pom-submissions/upsert-batch: creating', () => {
           id: expect.stringMatching(objectIdPattern),
           schemeOrgId,
           memberOrgId: m2,
-          compliancePeriodYear: 2025,
+          compliancePeriodYear: currentYear,
           compliancePeriodQuarter: 'Q4',
           action: 'Created'
         }
@@ -173,7 +178,7 @@ test.describe('POST /pom-submissions/upsert-batch: creating', () => {
           schemeOrgId,
           memberOrgId: posted[index].memberOrgId,
           memberName: posted[index].memberName,
-          compliancePeriodYear: 2026,
+          compliancePeriodYear: currentYear,
           compliancePeriodQuarter: 'Q1',
           dataBasis: 'Actual',
           tonnageEntries: [
@@ -188,17 +193,17 @@ test.describe('POST /pom-submissions/upsert-batch: creating', () => {
   )
 
   test(
-    'Should create several members across several quarters and years',
+    'Should create several members across the quarters of one year',
     { tag: ['@batch', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       const [m0, m1] = membersOf(2)
       const periods = [
-        [m0, 2026, 'Q1'],
-        [m0, 2026, 'Q2'],
-        [m0, 2025, 'Q4'],
-        [m1, 2026, 'Q1'],
-        [m1, 2025, 'Q3']
+        [m0, currentYear, 'Q1'],
+        [m0, currentYear, 'Q2'],
+        [m0, currentYear, 'Q4'],
+        [m1, currentYear, 'Q1'],
+        [m1, currentYear, 'Q3']
       ]
 
       await upserted(
@@ -513,9 +518,9 @@ test.describe('POST /pom-submissions/upsert-batch: validation', () => {
     'an empty member name': { memberName: '' },
     'a scheme id that is not an ObjectId': { schemeOrgId: 'not-an-id' },
     'a member id that is not an ObjectId': { memberOrgId: 'not-an-id' },
-    'a BPRN in the wrong format': { memberBprn: 'BPRN-XX-2026-1' },
+    'a BPRN in the wrong format': { memberBprn: `BPRN-XX-${currentYear}-1` },
     'a BPRN year that differs from the compliance year': {
-      memberBprn: 'BPRN-EA-2025-000001'
+      memberBprn: `BPRN-EA-${currentYear - 1}-000001`
     },
     'an empty scheme membership reference': { schemeMembershipRef: '' },
     'an empty data basis': { dataBasis: '' },
@@ -569,7 +574,10 @@ test.describe('POST /pom-submissions/upsert-batch: validation', () => {
         itemFor(schemeOrgId, objectId()),
         itemFor(schemeOrgId, objectId(), { memberName: '' }),
         itemFor(schemeOrgId, objectId()),
-        { ...itemFor(schemeOrgId, objectId()), memberBprn: 'BPRN-XX-2026-1' }
+        {
+          ...itemFor(schemeOrgId, objectId()),
+          memberBprn: `BPRN-XX-${currentYear}-1`
+        }
       ])
 
       expect(response.status()).toBe(400)
@@ -590,7 +598,7 @@ test.describe('POST /pom-submissions/upsert-batch: validation', () => {
       const invalid = {
         ...itemFor(schemeOrgId, objectId()),
         memberName: '',
-        memberBprn: 'BPRN-XX-2026-1',
+        memberBprn: `BPRN-XX-${currentYear}-1`,
         dataBasis: '',
         tonnageEntries: [{ classification: { chemistry: '' }, tonnes: '12.5' }]
       }
@@ -943,24 +951,38 @@ test.describe('POST /pom-submissions/upsert-batch: authentication', () => {
 })
 
 test.describe('POST /pom-submissions/upsert-batch: size and scope', () => {
+  // The largest real batch: a scheme has at most 250 members and files all four
+  // quarters of one year (1000 items), each with up to 4 tonnage entries. The
+  // test uses 300 members, 1200 items, for a margin.
   test(
-    'Should save a large batch and keep the response short',
+    'Should save a full year for 300 members, with 4 tonnage entries each, and keep the response short',
     { tag: ['@batch', '@api'] },
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
-      const batch = membersOf(300).map((member) => itemFor(schemeOrgId, member))
+      const tonnage = [
+        ['Alkaline', '12.500'],
+        ['Lithium', '3.250'],
+        ['Nickel metal hydride', '1.750'],
+        ['Zinc carbon', '0.500']
+      ]
+      const batch = membersOf(300).flatMap((member) =>
+        quarters.map((quarter) =>
+          itemFor(schemeOrgId, member, { year: currentYear, quarter, tonnage })
+        )
+      )
+      expect(batch).toHaveLength(1200)
 
       const response = await upsert(request, accessToken, batch)
 
       expect(response.status()).toBe(200)
       const results = await response.json()
-      expect(results).toHaveLength(300)
+      expect(results).toHaveLength(1200)
       expect(results.every((result) => result.action === 'Created')).toBe(true)
       expect(results.map((result) => result.requestIndex)).toEqual(
         results.map((_, index) => index)
       )
       const page = await list(request, accessToken, { schemeOrgId })
-      expect(page.totalCount).toBe(300)
+      expect(page.totalCount).toBe(1200)
     }
   )
 

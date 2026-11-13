@@ -1,6 +1,7 @@
 import { test, expect } from '#fixtures/index.js'
 import { backendHeaders } from '#utils/env.js'
 import {
+  currentYear,
   authHeaders as sharedAuthHeaders,
   base,
   create,
@@ -90,20 +91,24 @@ test.describe('GET /pom-submissions: years look-back', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' },
-        { year: 2025, quarter: 'Q1' },
-        { year: 2024, quarter: 'Q1' },
-        { year: 2023, quarter: 'Q1' },
-        { year: 2022, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' },
+        { year: currentYear - 1, quarter: 'Q1' },
+        { year: currentYear - 2, quarter: 'Q1' },
+        { year: currentYear - 3, quarter: 'Q1' },
+        { year: currentYear - 4, quarter: 'Q1' }
       ])
 
       const { response, body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [2026, 2025, 2024]
+        compliancePeriodYears: [currentYear, currentYear - 1, currentYear - 2]
       })
 
       expect(response.status()).toBe(200)
-      expect(periodsOf(body.items)).toEqual(['2024 Q1', '2025 Q1', '2026 Q1'])
+      expect(periodsOf(body.items)).toEqual([
+        `${currentYear - 2} Q1`,
+        `${currentYear - 1} Q1`,
+        `${currentYear} Q1`
+      ])
       expect(body.totalCount).toBe(3)
     }
   )
@@ -114,16 +119,23 @@ test.describe('GET /pom-submissions: years look-back', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2023, quarter: 'Q1' },
-        { year: 2022, quarter: 'Q1' }
+        { year: currentYear - 3, quarter: 'Q1' },
+        { year: currentYear - 4, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [2023, 2022, 2021]
+        compliancePeriodYears: [
+          currentYear - 3,
+          currentYear - 4,
+          currentYear - 5
+        ]
       })
 
-      expect(periodsOf(body.items)).toEqual(['2022 Q1', '2023 Q1'])
+      expect(periodsOf(body.items)).toEqual([
+        `${currentYear - 4} Q1`,
+        `${currentYear - 3} Q1`
+      ])
     }
   )
 
@@ -133,12 +145,16 @@ test.describe('GET /pom-submissions: years look-back', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const { response, body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [2021, 2020, 2019]
+        compliancePeriodYears: [
+          currentYear - 5,
+          currentYear - 6,
+          currentYear - 7
+        ]
       })
 
       expect(response.status()).toBe(200)
@@ -152,16 +168,16 @@ test.describe('GET /pom-submissions: years look-back', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' },
-        { year: 2025, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' },
+        { year: currentYear - 1, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: 2026
+        compliancePeriodYears: currentYear
       })
 
-      expect(periodsOf(body.items)).toEqual(['2026 Q1'])
+      expect(periodsOf(body.items)).toEqual([`${currentYear} Q1`])
     }
   )
 
@@ -171,17 +187,20 @@ test.describe('GET /pom-submissions: years look-back', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' },
-        { year: 2024, quarter: 'Q1' },
-        { year: 2022, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' },
+        { year: currentYear - 2, quarter: 'Q1' },
+        { year: currentYear - 4, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [2026, 2022]
+        compliancePeriodYears: [currentYear, currentYear - 4]
       })
 
-      expect(periodsOf(body.items)).toEqual(['2022 Q1', '2026 Q1'])
+      expect(periodsOf(body.items)).toEqual([
+        `${currentYear - 4} Q1`,
+        `${currentYear} Q1`
+      ])
     }
   )
 })
@@ -197,19 +216,19 @@ test.describe('GET /pom-submissions: quarters', () => {
         accessToken,
         schemeOrgId,
         objectId(),
-        allQuarters(2026)
+        allQuarters(currentYear)
       )
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: 2026
+        compliancePeriodYears: currentYear
       })
 
       expect(periodsOf(body.items)).toEqual([
-        '2026 Q1',
-        '2026 Q2',
-        '2026 Q3',
-        '2026 Q4'
+        `${currentYear} Q1`,
+        `${currentYear} Q2`,
+        `${currentYear} Q3`,
+        `${currentYear} Q4`
       ])
       expect(body.items[0]).not.toHaveProperty('totalTonnes')
     }
@@ -225,7 +244,7 @@ test.describe('GET /pom-submissions: quarters', () => {
         accessToken,
         schemeOrgId,
         objectId(),
-        allQuarters(2026)
+        allQuarters(currentYear)
       )
 
       const { body } = await list(request, accessToken, {
@@ -233,7 +252,10 @@ test.describe('GET /pom-submissions: quarters', () => {
         compliancePeriodQuarters: ['Q1', 'Q2']
       })
 
-      expect(periodsOf(body.items)).toEqual(['2026 Q1', '2026 Q2'])
+      expect(periodsOf(body.items)).toEqual([
+        `${currentYear} Q1`,
+        `${currentYear} Q2`
+      ])
     }
   )
 
@@ -244,22 +266,22 @@ test.describe('GET /pom-submissions: quarters', () => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, memberOrgId, [
-        ...allQuarters(2026),
-        ...allQuarters(2025),
-        ...allQuarters(2024)
+        ...allQuarters(currentYear),
+        ...allQuarters(currentYear - 1),
+        ...allQuarters(currentYear - 2)
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [2026, 2025],
+        compliancePeriodYears: [currentYear, currentYear - 1],
         compliancePeriodQuarters: ['Q3', 'Q4']
       })
 
       expect(periodsOf(body.items)).toEqual([
-        '2025 Q3',
-        '2025 Q4',
-        '2026 Q3',
-        '2026 Q4'
+        `${currentYear - 1} Q3`,
+        `${currentYear - 1} Q4`,
+        `${currentYear} Q3`,
+        `${currentYear} Q4`
       ])
     }
   )
@@ -271,17 +293,20 @@ test.describe('GET /pom-submissions: quarters', () => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, memberOrgId, [
-        { year: 2026, quarter: 'Q1' },
-        { year: 2026, quarter: 'Q3' }
+        { year: currentYear, quarter: 'Q1' },
+        { year: currentYear, quarter: 'Q3' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
         memberOrgId,
-        compliancePeriodYears: 2026
+        compliancePeriodYears: currentYear
       })
 
-      expect(periodsOf(body.items)).toEqual(['2026 Q1', '2026 Q3'])
+      expect(periodsOf(body.items)).toEqual([
+        `${currentYear} Q1`,
+        `${currentYear} Q3`
+      ])
     }
   )
 })
@@ -298,7 +323,7 @@ test.describe('GET /pom-submissions: data returned', () => {
         accessToken,
         schemeOrgId,
         memberOrgId,
-        [{ year: 2026, quarter: 'Q1' }]
+        [{ year: currentYear, quarter: 'Q1' }]
       )
 
       const { body } = await list(request, accessToken, { schemeOrgId })
@@ -327,7 +352,7 @@ test.describe('GET /pom-submissions: data returned', () => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, memberOrgId, [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, { schemeOrgId })
@@ -348,7 +373,7 @@ test.describe('GET /pom-submissions: data returned', () => {
         status: 'Submitted',
         schemeOrgId,
         memberOrgId,
-        compliancePeriodYear: 2026,
+        compliancePeriodYear: currentYear,
         compliancePeriodQuarter: 'Q1',
         dataBasis: 'Actual',
         submittedOnUtc: expect.stringMatching(utcTimestamp),
@@ -380,7 +405,7 @@ test.describe('GET /pom-submissions/{id}', () => {
         accessToken,
         objectId(),
         objectId(),
-        [{ year: 2026, quarter: 'Q1' }]
+        [{ year: currentYear, quarter: 'Q1' }]
       )
 
       const response = await request.get(`${base}/${created.id}`, {
@@ -441,10 +466,10 @@ test.describe('GET /pom-submissions: filters', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, { schemeOrgId })
@@ -459,10 +484,10 @@ test.describe('GET /pom-submissions: filters', () => {
     async ({ request, accessToken }) => {
       const memberOrgId = objectId()
       await seed(request, accessToken, objectId(), memberOrgId, [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
       await seed(request, accessToken, objectId(), objectId(), [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, { memberOrgId })
@@ -479,24 +504,24 @@ test.describe('GET /pom-submissions: filters', () => {
       const schemeOrgId = objectId()
       const memberOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, memberOrgId, [
-        ...allQuarters(2026),
-        ...allQuarters(2025)
+        ...allQuarters(currentYear),
+        ...allQuarters(currentYear - 1)
       ])
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q2' }
+        { year: currentYear, quarter: 'Q2' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
         memberOrgId,
-        compliancePeriodYears: 2026,
+        compliancePeriodYears: currentYear,
         compliancePeriodQuarters: 'Q2'
       })
 
       expect(body.items).toHaveLength(1)
       expect(body.items[0]).toMatchObject({
         memberOrgId,
-        compliancePeriodYear: 2026,
+        compliancePeriodYear: currentYear,
         compliancePeriodQuarter: 'Q2'
       })
     }
@@ -522,7 +547,7 @@ test.describe('GET /pom-submissions: filters', () => {
       const schemeOrgId = objectId()
       const otherMember = objectId()
       await seed(request, accessToken, objectId(), otherMember, [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, {
@@ -540,7 +565,7 @@ test.describe('GET /pom-submissions: filters', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const { response, body } = await list(request, accessToken, {
@@ -558,7 +583,7 @@ test.describe('GET /pom-submissions: filters', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: 2026, quarter: 'Q1' }
+        { year: currentYear, quarter: 'Q1' }
       ])
 
       const withDefault = await list(request, accessToken, { schemeOrgId })
@@ -602,7 +627,7 @@ test.describe('GET /pom-submissions: validation', () => {
     }
   )
 
-  for (const year of ['99', 'abc', '-5', '10000', '2026.5']) {
+  for (const year of ['99', 'abc', '-5', '10000', `${currentYear}.5`]) {
     test(
       `Should return 400 for compliancePeriodYears=${year}`,
       { tag: '@api' },
@@ -699,11 +724,11 @@ test.describe('GET /pom-submissions: validation', () => {
 test.describe('GET /pom-submissions: paging', () => {
   // Five submissions, pageSize 2: three pages of 2, 2 and 1.
   const fivePeriods = [
-    { year: 2026, quarter: 'Q1' },
-    { year: 2026, quarter: 'Q2' },
-    { year: 2026, quarter: 'Q3' },
-    { year: 2026, quarter: 'Q4' },
-    { year: 2025, quarter: 'Q1' }
+    { year: currentYear, quarter: 'Q1' },
+    { year: currentYear, quarter: 'Q2' },
+    { year: currentYear, quarter: 'Q3' },
+    { year: currentYear, quarter: 'Q4' },
+    { year: currentYear - 1, quarter: 'Q1' }
   ]
 
   test(
@@ -845,7 +870,7 @@ test.describe('GET /pom-submissions: paging', () => {
 })
 
 test.describe('GET /pom-submissions: gzip and the page size cap', () => {
-  const oneSubmission = [{ year: 2026, quarter: 'Q1' }]
+  const oneSubmission = [{ year: currentYear, quarter: 'Q1' }]
 
   test(
     'Should cap pageSize at 750 when the caller does not accept gzip',
