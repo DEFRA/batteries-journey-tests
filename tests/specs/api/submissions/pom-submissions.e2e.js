@@ -1,10 +1,6 @@
-import { randomBytes } from 'node:crypto'
-
 import { test, expect } from '#fixtures/index.js'
 import { backendHeaders, backendUrls } from '#utils/env.js'
-
-// 24 hex characters, the shape of a Mongo ObjectId the backend requires.
-const objectId = () => randomBytes(12).toString('hex')
+import { currentYear, objectId } from '#utils/pom-submissions.js'
 
 // Unique scheme and member per call: a second submission for the same member
 // and quarter is rejected, so tests never share them.
@@ -12,9 +8,9 @@ const validSubmission = (overrides = {}) => ({
   schemeOrgId: objectId(),
   memberOrgId: objectId(),
   memberName: 'Journey Test Member Ltd',
-  memberBprn: 'BPRN-EA-2026-000001',
+  memberBprn: `BPRN-EA-${currentYear}-000001`,
   schemeMembershipRef: 'SM-0001',
-  compliancePeriodYear: 2026,
+  compliancePeriodYear: currentYear,
   compliancePeriodQuarter: 'Q1',
   dataBasis: 'Actual',
   tonnageEntries: [
@@ -128,7 +124,7 @@ test.describe('POST /pom-submissions', () => {
           schemeOrgId: 'not-an-id',
           memberOrgId: 'not-an-id',
           memberName: '',
-          memberBprn: 'BPRN-XX-2026-1',
+          memberBprn: `BPRN-XX-${currentYear}-1`,
           schemeMembershipRef: '',
           compliancePeriodYear: 0,
           compliancePeriodQuarter: '',
@@ -195,7 +191,7 @@ test.describe('POST /pom-submissions', () => {
       const { response, responseText } = await postSubmission(
         request,
         accessToken,
-        validSubmission({ memberBprn: 'BPRN-EA-2025-000001' })
+        validSubmission({ memberBprn: `BPRN-EA-${currentYear - 1}-000001` })
       )
 
       expect(response.status()).toBe(400)

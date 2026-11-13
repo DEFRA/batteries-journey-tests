@@ -1,69 +1,18 @@
-import { randomBytes } from 'node:crypto'
-
 import { test, expect } from '#fixtures/index.js'
-import { backendHeaders, backendUrls } from '#utils/env.js'
-
-const base = `${backendUrls.submissions}/pom-submissions`
-
-// 24 hex characters, the shape of a Mongo ObjectId the backend requires.
-const objectId = () => randomBytes(12).toString('hex')
-
-// CDP_API_KEY is only set when going through the ephemeral gateway (a laptop
-// run). That gateway sends `content-encoding: gzip` with an uncompressed body,
-// which Playwright cannot decode, so such calls ask for plain JSON. Inside CDP
-// the service is called directly and the header is not needed.
-const viaGateway = Boolean(backendHeaders['x-api-key'])
-const plainJson = viaGateway ? { 'Accept-Encoding': 'identity' } : {}
-
-const authHeaders = (accessToken) => ({
-  ...backendHeaders,
-  ...plainJson,
-  Authorization: `Bearer ${accessToken}`
-})
-
-// Same body for create and amend. The submission is found by scheme, member,
-// year and quarter, so every test uses its own scheme and members.
-const submissionFor = ({
-  schemeOrgId,
-  memberOrgId,
-  year = 2026,
-  quarter = 'Q1',
-  memberName = 'Journey Test Member Ltd',
-  schemeMembershipRef = 'SM-0001',
-  dataBasis = 'Actual',
-  tonnage = [
-    ['Alkaline', '12.500'],
-    ['Lithium', '3.250']
-  ]
-}) => ({
-  schemeOrgId,
-  memberOrgId,
-  memberName,
-  // The BPRN year must equal the compliance year.
-  memberBprn: `BPRN-EA-${year}-000001`,
-  schemeMembershipRef,
-  compliancePeriodYear: year,
-  compliancePeriodQuarter: quarter,
-  dataBasis,
-  tonnageEntries: tonnage.map(([chemistry, tonnes]) => ({
-    classification: { chemistry },
-    tonnes
-  }))
-})
-
-async function create(request, accessToken, key, overrides = {}) {
-  const response = await request.post(base, {
-    headers: authHeaders(accessToken),
-    data: submissionFor({ ...key, ...overrides })
-  })
-  expect(response.status(), 'create').toBe(201)
-  return response.json()
-}
-
-// PATCH /pom-submissions replaces the current submission for the key. Returns
-// the response so a test can assert on a refusal as well as on a success.
-const patch = (request, accessToken, data) =>
-  request.patch(base, { headers: authHeaders(accessToken), data })
+import { backendHeaders } from '#utils/env.js'
+import {
+  currentYear,
+  authHeaders,
+  base,
+  create,
+  getById,
+  list,
+  objectId,
+  patch,
+  submissionFor,
+  toMillisecond,
+  viaGateway
+} from '#utils/pom-submissions.js'
 
 async function amend(request, accessToken, key, overrides = {}) {
   const response = await patch(
@@ -75,24 +24,14 @@ async function amend(request, accessToken, key, overrides = {}) {
   return response.json()
 }
 
-async function list(request, accessToken, params) {
-  const search = new URLSearchParams()
-  for (const [name, value] of Object.entries(params)) {
-    search.append(name, String(value))
-  }
-  const response = await request.get(`${base}?${search}`, {
-    headers: authHeaders(accessToken)
+// returnCurrentOnly=false returns the current and the superseded rows together,
+// so the superseded ones are picked out by isCurrent.
+async function listSuperseded(request, accessToken, params) {
+  const page = await list(request, accessToken, {
+    ...params,
+    returnCurrentOnly: false
   })
-  expect(response.status(), 'list').toBe(200)
-  return response.json()
-}
-
-async function getById(request, accessToken, id) {
-  const response = await request.get(`${base}/${id}`, {
-    headers: authHeaders(accessToken)
-  })
-  expect(response.status(), 'get by id').toBe(200)
-  return response.json()
+  return { ...page, items: page.items.filter((item) => !item.isCurrent) }
 }
 
 // A fresh scheme and member, with a version 1 already created.
@@ -101,10 +40,6 @@ async function createdSubmission(request, accessToken, overrides = {}) {
   const v1 = await create(request, accessToken, key, overrides)
   return { key, v1 }
 }
-
-// Mongo stores timestamps to the millisecond; a response built before the
-// write can carry more digits. Compare to the millisecond.
-const toMillisecond = (timestamp) => timestamp.slice(0, 23)
 
 const chemistriesOf = (submission) =>
   submission.tonnageEntries.map((entry) => entry.classification.chemistry)
@@ -179,9 +114,8 @@ test.describe('PATCH /pom-submissions: audit trail', () => {
       const current = await list(request, accessToken, {
         schemeOrgId: key.schemeOrgId
       })
-      const superseded = await list(request, accessToken, {
-        schemeOrgId: key.schemeOrgId,
-        isCurrent: false
+      const superseded = await listSuperseded(request, accessToken, {
+        schemeOrgId: key.schemeOrgId
       })
       expect(current.items.map((item) => item.id)).toEqual([v3.id])
       expect(superseded.items.map((item) => item.id).sort()).toEqual(
@@ -270,9 +204,9 @@ test.describe('PATCH /pom-submissions: atomic and exclusive', () => {
         const current = await list(request, accessToken, {
           schemeOrgId: key.schemeOrgId,
           memberOrgId: key.memberOrgId,
-          compliancePeriodYears: 2026,
+          compliancePeriodYears: currentYear,
           compliancePeriodQuarters: 'Q1',
-          isCurrent: true
+          returnCurrentOnly: true
         })
         expect(current.totalCount, `after amendment ${amendment}`).toBe(1)
       }
@@ -313,11 +247,10 @@ test.describe('PATCH /pom-submissions: atomic and exclusive', () => {
         }
         const current = await list(request, accessToken, {
           ...scope,
-          isCurrent: true
+          returnCurrentOnly: true
         })
-        const superseded = await list(request, accessToken, {
-          ...scope,
-          isCurrent: false
+        const superseded = await listSuperseded(request, accessToken, {
+          ...scope
         })
         const versions = [...current.items, ...superseded.items].sort(
           (a, b) => a.version - b.version
@@ -354,15 +287,14 @@ test.describe('PATCH /pom-submissions: atomic and exclusive', () => {
       expect(response.status()).toBe(400)
       const current = await list(request, accessToken, {
         schemeOrgId: key.schemeOrgId,
-        isCurrent: true
+        returnCurrentOnly: true
       })
-      const superseded = await list(request, accessToken, {
-        schemeOrgId: key.schemeOrgId,
-        isCurrent: false
+      const superseded = await listSuperseded(request, accessToken, {
+        schemeOrgId: key.schemeOrgId
       })
       expect(current.items.map((item) => item.id)).toEqual([v1.id])
       expect(current.items[0].updatedAtUtc).toBeNull()
-      expect(superseded.totalCount).toBe(0)
+      expect(superseded.items).toHaveLength(0)
     }
   )
 
@@ -395,7 +327,7 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
     async ({ request, accessToken }) => {
       const invalid = {
         memberName: '',
-        memberBprn: 'BPRN-XX-2026-1',
+        memberBprn: `BPRN-XX-${currentYear}-1`,
         schemeMembershipRef: '',
         dataBasis: '',
         tonnageEntries: [{ classification: { chemistry: '' }, tonnes: '12.5' }]
@@ -430,7 +362,7 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
       const invalidBodies = {
         'a BPRN year that differs from the compliance year': {
           ...valid,
-          memberBprn: 'BPRN-EA-2025-000001'
+          memberBprn: `BPRN-EA-${currentYear - 1}-000001`
         },
         'no tonnage entries': { ...valid, tonnageEntries: [] },
         'a classification repeated': submissionFor({
@@ -450,14 +382,13 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
 
       const current = await list(request, accessToken, {
         schemeOrgId: key.schemeOrgId,
-        isCurrent: true
+        returnCurrentOnly: true
       })
-      const superseded = await list(request, accessToken, {
-        schemeOrgId: key.schemeOrgId,
-        isCurrent: false
+      const superseded = await listSuperseded(request, accessToken, {
+        schemeOrgId: key.schemeOrgId
       })
       expect(current.items.map((item) => item.id)).toEqual([v1.id])
-      expect(superseded.totalCount).toBe(0)
+      expect(superseded.items).toHaveLength(0)
     }
   )
 
@@ -477,7 +408,7 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
         const response = await request.patch(base, {
           headers: {
             ...backendHeaders,
-            ...plainJson,
+            ...(viaGateway && { 'Accept-Encoding': 'identity' }),
             ...(authorization && { Authorization: authorization })
           },
           data: submissionFor(key)
@@ -486,7 +417,7 @@ test.describe('PATCH /pom-submissions: validation and authentication', () => {
         expect(response.status()).toBe(401)
         const current = await list(request, accessToken, {
           schemeOrgId: key.schemeOrgId,
-          isCurrent: true
+          returnCurrentOnly: true
         })
         expect(current.items.map((item) => item.id)).toEqual([v1.id])
       }
@@ -510,16 +441,21 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
   )
 
   test(
-    'Should amend an old period because there is no cut-off',
+    'Should amend a submission for the earliest of the three allowed years',
     { tag: ['@amend', '@api'] },
     async ({ request, accessToken }) => {
       const { key } = await createdSubmission(request, accessToken, {
-        year: 2021
+        year: currentYear - 2
       })
 
-      const v2 = await amend(request, accessToken, key, { year: 2021 })
+      const v2 = await amend(request, accessToken, key, {
+        year: currentYear - 2
+      })
 
-      expect(v2).toMatchObject({ version: 2, compliancePeriodYear: 2021 })
+      expect(v2).toMatchObject({
+        version: 2,
+        compliancePeriodYear: currentYear - 2
+      })
     }
   )
 
@@ -597,7 +533,7 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
 
       const current = await list(request, accessToken, {
         schemeOrgId: key.schemeOrgId,
-        isCurrent: true
+        returnCurrentOnly: true
       })
       expect(current.items.map((item) => item.id)).toEqual([v1.id])
     }
@@ -611,7 +547,9 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
       const otherMember = { ...key, memberOrgId: objectId() }
       const q1 = await create(request, accessToken, key)
       const q2 = await create(request, accessToken, key, { quarter: 'Q2' })
-      const year2025 = await create(request, accessToken, key, { year: 2025 })
+      const previousYear = await create(request, accessToken, key, {
+        year: currentYear - 1
+      })
       const other = await create(request, accessToken, otherMember)
 
       await amend(request, accessToken, key, {
@@ -620,10 +558,10 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
 
       const current = await list(request, accessToken, {
         schemeOrgId: key.schemeOrgId,
-        isCurrent: true
+        returnCurrentOnly: true
       })
       const byId = new Map(current.items.map((item) => [item.id, item]))
-      for (const untouched of [q2, year2025, other]) {
+      for (const untouched of [q2, previousYear, other]) {
         expect(byId.get(untouched.id)).toMatchObject({
           version: 1,
           isCurrent: true
@@ -668,30 +606,33 @@ test.describe('GET /pom-submissions: amended submissions', () => {
   )
 
   test(
-    'Should return only the superseded version for isCurrent=false',
+    'Should return the current and the superseded version for returnCurrentOnly=false',
     { tag: ['@amend', '@api'] },
     async ({ request, accessToken }) => {
-      const { schemeOrgId, v1 } = await amended(request, accessToken)
+      const { schemeOrgId, v1, v2 } = await amended(request, accessToken)
 
-      const superseded = await list(request, accessToken, {
+      const all = await list(request, accessToken, {
         schemeOrgId,
-        isCurrent: false
+        returnCurrentOnly: false
       })
 
-      expect(superseded.items.map((item) => item.id)).toEqual([v1.id])
-      expect(superseded.items[0].isCurrent).toBe(false)
+      expect(all.items.map((item) => item.id).sort()).toEqual(
+        [v1.id, v2.id].sort()
+      )
+      expect(all.items.find((item) => item.id === v1.id).isCurrent).toBe(false)
+      expect(all.items.find((item) => item.id === v2.id).isCurrent).toBe(true)
     }
   )
 
   test(
-    'Should return only the current version for isCurrent=true and by default',
+    'Should return only the current version for returnCurrentOnly=true and by default',
     { tag: ['@amend', '@api'] },
     async ({ request, accessToken }) => {
       const { schemeOrgId, v2 } = await amended(request, accessToken)
 
       const explicit = await list(request, accessToken, {
         schemeOrgId,
-        isCurrent: true
+        returnCurrentOnly: true
       })
       const byDefault = await list(request, accessToken, { schemeOrgId })
 
@@ -708,14 +649,12 @@ test.describe('GET /pom-submissions: amended submissions', () => {
       const { schemeOrgId, v1, v2 } = await amended(request, accessToken)
 
       const current = await list(request, accessToken, { schemeOrgId })
-      const superseded = await list(request, accessToken, {
-        schemeOrgId,
-        isCurrent: false
+      const superseded = await listSuperseded(request, accessToken, {
+        schemeOrgId
       })
 
-      expect(
-        [...current.items, ...superseded.items].map((item) => item.id).sort()
-      ).toEqual([v1.id, v2.id].sort())
+      expect(current.items.map((item) => item.id)).toEqual([v2.id])
+      expect(superseded.items.map((item) => item.id)).toEqual([v1.id])
     }
   )
 })
