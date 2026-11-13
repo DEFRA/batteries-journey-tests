@@ -93,9 +93,7 @@ test.describe('GET /pom-submissions: years look-back', () => {
       await seed(request, accessToken, schemeOrgId, objectId(), [
         { year: currentYear, quarter: 'Q1' },
         { year: currentYear - 1, quarter: 'Q1' },
-        { year: currentYear - 2, quarter: 'Q1' },
-        { year: currentYear - 3, quarter: 'Q1' },
-        { year: currentYear - 4, quarter: 'Q1' }
+        { year: currentYear - 2, quarter: 'Q1' }
       ])
 
       const { response, body } = await list(request, accessToken, {
@@ -119,22 +117,18 @@ test.describe('GET /pom-submissions: years look-back', () => {
     async ({ request, accessToken }) => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
-        { year: currentYear - 3, quarter: 'Q1' },
-        { year: currentYear - 4, quarter: 'Q1' }
+        { year: currentYear - 1, quarter: 'Q1' },
+        { year: currentYear - 2, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [
-          currentYear - 3,
-          currentYear - 4,
-          currentYear - 5
-        ]
+        compliancePeriodYears: [currentYear, currentYear - 1, currentYear - 2]
       })
 
       expect(periodsOf(body.items)).toEqual([
-        `${currentYear - 4} Q1`,
-        `${currentYear - 3} Q1`
+        `${currentYear - 2} Q1`,
+        `${currentYear - 1} Q1`
       ])
     }
   )
@@ -151,9 +145,9 @@ test.describe('GET /pom-submissions: years look-back', () => {
       const { response, body } = await list(request, accessToken, {
         schemeOrgId,
         compliancePeriodYears: [
-          currentYear - 5,
-          currentYear - 6,
-          currentYear - 7
+          currentYear - 3,
+          currentYear - 4,
+          currentYear - 5
         ]
       })
 
@@ -188,17 +182,17 @@ test.describe('GET /pom-submissions: years look-back', () => {
       const schemeOrgId = objectId()
       await seed(request, accessToken, schemeOrgId, objectId(), [
         { year: currentYear, quarter: 'Q1' },
-        { year: currentYear - 2, quarter: 'Q1' },
-        { year: currentYear - 4, quarter: 'Q1' }
+        { year: currentYear - 1, quarter: 'Q1' },
+        { year: currentYear - 2, quarter: 'Q1' }
       ])
 
       const { body } = await list(request, accessToken, {
         schemeOrgId,
-        compliancePeriodYears: [currentYear, currentYear - 4]
+        compliancePeriodYears: [currentYear, currentYear - 2]
       })
 
       expect(periodsOf(body.items)).toEqual([
-        `${currentYear - 4} Q1`,
+        `${currentYear - 2} Q1`,
         `${currentYear} Q1`
       ])
     }

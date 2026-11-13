@@ -441,20 +441,20 @@ test.describe('PATCH /pom-submissions: how the record is found', () => {
   )
 
   test(
-    'Should amend an old period because there is no cut-off',
+    'Should amend a submission for the earliest of the three allowed years',
     { tag: ['@amend', '@api'] },
     async ({ request, accessToken }) => {
       const { key } = await createdSubmission(request, accessToken, {
-        year: currentYear - 5
+        year: currentYear - 2
       })
 
       const v2 = await amend(request, accessToken, key, {
-        year: currentYear - 5
+        year: currentYear - 2
       })
 
       expect(v2).toMatchObject({
         version: 2,
-        compliancePeriodYear: currentYear - 5
+        compliancePeriodYear: currentYear - 2
       })
     }
   )
